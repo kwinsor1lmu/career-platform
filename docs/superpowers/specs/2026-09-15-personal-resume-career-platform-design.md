@@ -150,6 +150,14 @@ cacheable where practical, with progressive enhancement rather than requiring
 client-side JavaScript for core resume access. Public pages should have stable
 URLs, meaningful metadata, and accessible semantic structure.
 
+The public profile must remain available when the database is unavailable.
+The deployment must therefore produce a database-independent fallback from the
+latest validated, published resume content. The fallback may be a generated
+static page or an application-bundled snapshot, and must contain only public
+published content. Normal database-backed reads may provide newer content when
+available, but database availability must not be required to serve the core
+profile.
+
 The design should use portable application components and standard SQL
 interfaces. Cloud-native services may be added only where they solve a clear
 operational need; the first release should not depend on a large collection of
@@ -172,6 +180,8 @@ The production baseline should include:
 - Database backups and a documented restore approach.
 - Health and error visibility sufficient to detect failed deployments or
   unavailable dependencies.
+- A deployable, database-independent public-profile fallback generated from
+  validated published content.
 - HTTPS and secure handling of any future authenticated authoring path.
 
 The design should remain deployable on more than one major cloud provider
@@ -193,13 +203,16 @@ without rewriting the domain or persistence layers.
 
 Invalid source content, failed ingestion, missing required configuration, and
 database failures are deployment or operational errors and must be surfaced
-with actionable diagnostics. The public site may use a user-safe error page,
-but it must not silently publish partial or stale content without an explicit
-and documented policy.
+with actionable diagnostics. If the database is unavailable, the application
+must serve the latest validated public-profile fallback and may indicate that
+the page is served from a cached snapshot without exposing implementation
+details. The fallback must never include drafts or private records.
 
 For read failures, the application should distinguish an unavailable
-dependency from an empty valid profile. Monitoring and logs should preserve
-that distinction.
+dependency from an empty valid profile and from a fallback response.
+Monitoring and logs should preserve that distinction, including the source
+version or generation timestamp of the fallback when practical. A valid empty
+profile is not a reason to replace or erase an existing fallback.
 
 ## 10. Accessibility, responsiveness, and discoverability
 
@@ -224,6 +237,8 @@ The implementation plan must include tests at the smallest useful boundaries:
 - Ordering and date-range behavior are deterministic.
 - Ingestion is repeatable and does not duplicate records unexpectedly.
 - A representative public page renders the complete published core resume.
+- The complete public profile remains servable when the database is stopped or
+  unreachable, using only the latest validated public fallback.
 - Private content is absent from HTML, metadata, API responses, and search
   results.
 - Responsive and accessibility checks cover the primary public navigation and
