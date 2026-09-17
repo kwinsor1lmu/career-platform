@@ -138,3 +138,25 @@ def test_ingestion_updates_existing_rows_without_duplicates(session: Session, so
     row = session.query(__import__("app.models", fromlist=["Experience"]).Experience).filter_by(stable_id="example-co-engineer").one()
     assert row.summary == "Updated description"
     assert row.visibility == "private"
+
+
+def test_failed_fallback_does_not_publish_database_changes(session: Session, source: ResumeSource, tmp_path, monkeypatch):
+    from importlib.util import module_from_spec, spec_from_file_location
+    from pathlib import Path
+
+    script_path = Path(__file__).parents[2] / "scripts" / "ingest_content.py"
+    spec = spec_from_file_location("ingest_content_script", script_path)
+    script = module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(script)
+
+    def fail_fallback(*args, **kwargs):
+        raise OSError("fallback storage unavailable")
+
+    monkeypatch.setattr(script, "write_public_fallback", fail_fallback)
+
+    with pytest.raises(OSError, match="fallback storage unavailable"):
+        script.release_resume(session, source, tmp_path / "fallback.json")
+
+    session.rollback()
+    assert count_rows(session, "profiles") == 0

@@ -102,3 +102,51 @@ Ingestion failed for .../invalid.json:
 - The service currently logs database availability failures with a traceback via `logger.exception`; production logging configuration should route this to the intended operational sink without exposing connection details.
 - The fallback path defaults to `data/fallback.json`, which is ignored by git and must be generated as part of deployment/release automation.
 - The existing project remains single-owner by design (`owner-1`); multi-tenant fallback selection is out of scope for Task 5.
+
+## Review fix: release transaction ordering
+
+The release path previously committed the database before generating the fallback. It now stages the fallback in the target directory, validates the staged file, and performs ingestion plus fallback generation inside one SQLAlchemy transaction. The database commit occurs only after fallback serialization and validation succeed; the staged file is atomically renamed to the configured fallback path only after the commit. Any fallback failure rolls back the database transaction and removes the staged file, preserving the previous fallback.
+
+### Regression test
+
+```bash
+pytest tests/content/test_ingest.py::test_failed_fallback_does_not_publish_database_changes -q
+```
+
+```text
+.                                                                        [100%]
+1 passed in 0.13s
+```
+
+The test forces fallback storage failure and verifies that no profile rows remain in the database.
+
+### Covering tests
+
+```bash
+pytest tests/content/test_ingest.py tests/content/test_fallback.py tests/services/test_resume_service.py -q
+```
+
+```text
+........                                                                 [100%]
+8 passed in 0.54s
+```
+
+### Full suite
+
+```bash
+pytest -q
+```
+
+```text
+.....................                                                    [100%]
+21 passed, 1 warning in 2.46s
+```
+
+The warning remains the existing Starlette/httpx deprecation warning.
+
+### Self-review
+
+- `ingest_resume(..., commit=False)` allows the release command to own the transaction while preserving the existing committed behavior for all other callers.
+- Staging and validation happen before transaction exit, so fallback failures cannot publish database changes.
+- The previous fallback is untouched until the database commit succeeds and `os.replace` swaps the validated staged file atomically.
+- The remaining filesystem edge case is a failure during the final post-commit rename; this cannot be coordinated atomically with SQLAlchemy, but it cannot expose a partially written fallback and the prior file remains intact if replacement itself fails.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -25,11 +26,12 @@ _SECTION_MODELS: tuple[tuple[str, type[Any], str], ...] = (
 )
 
 
-def ingest_resume(session: Session, source: ResumeSource) -> None:
+def ingest_resume(session: Session, source: ResumeSource, *, commit: bool = True) -> None:
     profile_id = source.profile.id
     owner_id = DEFAULT_OWNER_ID
 
-    with session.begin():
+    transaction = session.begin() if commit else nullcontext()
+    with transaction:
         profile = session.query(Profile).filter_by(id=profile_id, owner_id=owner_id).one_or_none()
         if profile is None:
             profile = Profile(

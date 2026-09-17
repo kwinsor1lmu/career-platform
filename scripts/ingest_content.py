@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,13 +13,37 @@ if str(ROOT) not in sys.path:
 
 from pydantic import ValidationError
 
-from app.content.fallback import write_public_fallback
+from app.content.fallback import load_public_fallback, write_public_fallback
 from app.content.ingest import ingest_resume
 from app.content.loader import load_resume_source
 from app.config import Settings
 from app.db import SessionLocal, engine
 from app.models import Base
 from app.repositories.resume import get_public_resume
+
+
+def release_resume(session, source, fallback_path: Path) -> None:
+    fallback_path.parent.mkdir(parents=True, exist_ok=True)
+    fd, staging_name = tempfile.mkstemp(
+        prefix=f".{fallback_path.name}.", suffix=".release", dir=fallback_path.parent
+    )
+    os.close(fd)
+    staging_path = Path(staging_name)
+    try:
+        with session.begin():
+            ingest_resume(session, source, commit=False)
+            public_resume = get_public_resume(session)
+            write_public_fallback(public_resume, staging_path)
+            load_public_fallback(staging_path)
+        os.replace(staging_path, fallback_path)
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        try:
+            staging_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def main() -> int:
@@ -53,10 +79,7 @@ def main() -> int:
     Base.metadata.create_all(bind=engine)
     session = SessionLocal()
     try:
-        ingest_resume(session, source)
-        session.commit()
-        public_resume = get_public_resume(session)
-        write_public_fallback(public_resume, fallback_path)
+        release_resume(session, source, fallback_path)
     except Exception as exc:  # pragma: no cover - CLI safety net
         session.rollback()
         print(f"Ingestion failed: {exc}", file=sys.stderr)
