@@ -44,6 +44,16 @@ def release_resume(session, source, fallback_path: Path) -> None:
             pass
 
 
+def _is_missing_schema_error(error: BaseException) -> bool:
+    current: BaseException | None = error
+    while current is not None:
+        message = str(current).lower()
+        if "no such table" in message or "does not exist" in message:
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Ingest resume content and publish the public fallback")
     parser.add_argument("path", type=Path, help="path to the resume JSON file")
@@ -90,20 +100,39 @@ def main() -> int:
             print(error, file=sys.stderr)
         return 1
 
-    from app.db import SessionLocal, engine
-    from app.models import Base
+    from sqlalchemy.exc import OperationalError
+
+    from app.db import SessionLocal
 
     try:
-        Base.metadata.create_all(bind=engine)
         session = SessionLocal()
         try:
             release_resume(session, source, fallback_path)
+        except OperationalError as exc:  # pragma: no cover - CLI safety net
+            session.rollback()
+            message = str(exc)
+            if _is_missing_schema_error(exc):
+                message = (
+                    "database schema is missing or migrations are not current; "
+                    "run 'alembic upgrade head' before ingestion"
+                )
+            print(f"Ingestion failed: {message}", file=sys.stderr)
+            return 1
         except Exception as exc:  # pragma: no cover - CLI safety net
             session.rollback()
             print(f"Ingestion failed: {exc}", file=sys.stderr)
             return 1
         finally:
             session.close()
+    except OperationalError as exc:  # pragma: no cover - CLI safety net
+        message = str(exc)
+        if _is_missing_schema_error(exc):
+            message = (
+                "database schema is missing or migrations are not current; "
+                "run 'alembic upgrade head' before ingestion"
+            )
+        print(f"Ingestion failed: {message}", file=sys.stderr)
+        return 1
     except Exception as exc:  # pragma: no cover - CLI safety net
         print(f"Ingestion failed: {exc}", file=sys.stderr)
         return 1

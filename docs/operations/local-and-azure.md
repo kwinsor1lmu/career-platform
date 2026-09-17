@@ -18,6 +18,7 @@ set -a
 set +a
 alembic upgrade head
 python scripts/validate_content.py content/resume.json
+# The ingest command requires the schema to have been migrated first.
 python scripts/ingest_content.py content/resume.json
 python -m pytest -q
 uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -75,4 +76,4 @@ This task does not provision Azure resources. The intended deployment is a priva
 
 Before a release, validate the image and database in staging, then follow this order: backup/confirm rollback, apply migrations, publish content/fallback, switch traffic, check `/health` and the public page, and monitor errors. For a database outage, the public page may continue from the last validated fallback, but ingestion and writes must fail visibly rather than silently creating success-shaped data.
 
-Release guardrails: fail the release if the source JSON is malformed, the production config is missing or invalid, the fallback is not a valid published snapshot, or a migration exits nonzero. In practice, do not rely on `python scripts/ingest_content.py ...` succeeding silently; require `python scripts/validate_content.py "$CONTENT_PATH"` and an explicit exit code before serving traffic, then verify the public page with `curl --fail http://127.0.0.1:8000/` and a final `pytest -q` on the local branch.
+Release guardrails: run `alembic upgrade head` before `python scripts/ingest_content.py`; ingestion never creates tables automatically and fails with migration guidance when the schema is missing. Fail the release if the source JSON is malformed, the production config is missing or invalid, the fallback is not a valid published snapshot, or a migration exits nonzero. In practice, do not rely on `python scripts/ingest_content.py ...` succeeding silently; require `python scripts/validate_content.py "$CONTENT_PATH"` and an explicit exit code before serving traffic, then verify the public page with `curl --fail http://127.0.0.1:8000/` and a final `pytest -q` on the local branch.

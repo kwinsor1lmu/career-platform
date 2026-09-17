@@ -24,6 +24,8 @@ def load_resume_with_fallback(
         return get_public_resume(session), "database"
     except _DATABASE_AVAILABILITY_ERRORS:
         logger.exception("Database unavailable; loading public resume fallback")
+    except ValueError:
+        logger.info("No published resume in database; loading public resume fallback")
     finally:
         if session is not None:
             session.close()

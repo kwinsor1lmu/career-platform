@@ -146,3 +146,19 @@ def test_release_fails_when_database_connection_fails_during_release_step_and_ke
     assert "database" in result.stderr.lower() or "connection" in result.stderr.lower()
     assert "Traceback" not in result.stderr
     assert fallback_path.read_text(encoding="utf-8") == original
+
+
+def test_release_fails_when_schema_is_missing_and_requires_migration(tmp_path):
+    source_path = _valid_source(tmp_path / "resume.json")
+    fallback_path = tmp_path / "fallback.json"
+    original = _valid_fallback(fallback_path)
+
+    result = _run_ingest(
+        source_path,
+        fallback_path=fallback_path,
+        env={"DATABASE_URL": f"sqlite:///{tmp_path / 'unmigrated.db'}"},
+    )
+
+    assert result.returncode != 0
+    assert "alembic upgrade head" in result.stderr
+    assert fallback_path.read_text(encoding="utf-8") == original

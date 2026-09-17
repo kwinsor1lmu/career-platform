@@ -56,3 +56,11 @@ Output:
 - Added the missing CLI-level release-step failure test for an unreachable PostgreSQL target during the real `python scripts/ingest_content.py` path, asserting a nonzero exit code, actionable stderr text, and no traceback.
 - Corrected the invalid-fallback subprocess case to create a valid fallback at the exact target path, then deliberately replace it with invalid JSON before invoking the CLI and assert that the target file bytes remain exactly as corrupted (the script must not rewrite it).
 - Re-ran the focused and full suite; both remain green with the final release guardrail checks in place.
+
+## Final review blocking-fix report
+
+- Removed `Base.metadata.create_all()` from `scripts/ingest_content.py`; ingestion now requires `alembic upgrade head` to have been run first and reports explicit migration guidance when the schema is missing.
+- Updated the local/Azure release instructions to document migration-first ingestion and the no-auto-schema-creation guardrail.
+- Updated `load_resume_with_fallback` to serve the validated fallback when the reachable repository has no published profile and raises `ValueError`.
+- Added regression coverage for both behaviors, including preservation of the prior fallback on an unmigrated database.
+- Validation: focused regression/schema/release tests passed; a temporary SQLite database passed `alembic upgrade head` followed by the real ingest command.

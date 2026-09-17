@@ -31,16 +31,15 @@ def test_service_uses_fallback_when_database_is_unavailable(tmp_path: Path, publ
     assert result.profile.id == public_resume.profile.id
 
 
-def test_service_does_not_hide_non_database_errors(tmp_path: Path, public_resume):
+def test_service_uses_fallback_when_database_has_no_published_profile(tmp_path: Path, public_resume, monkeypatch):
     path = tmp_path / "fallback.json"
     write_public_fallback(public_resume, path)
 
-    def raise_application_error():
-        raise ValueError("invalid query")
+    def raise_no_published_profile(session):
+        raise ValueError("No published profile is available for this owner.")
 
-    try:
-        load_resume_with_fallback(raise_application_error, path)
-    except ValueError as error:
-        assert str(error) == "invalid query"
-    else:
-        raise AssertionError("application errors must not use the fallback")
+    monkeypatch.setattr("app.services.resume.get_public_resume", raise_no_published_profile)
+    result, source = load_resume_with_fallback(lambda: SimpleNamespace(close=lambda: None), path)
+
+    assert source == "fallback"
+    assert result.profile.id == public_resume.profile.id
