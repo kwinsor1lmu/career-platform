@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.config import Settings
+from app.content.fallback import write_public_fallback
+from app.main import create_app
 from app.models import Base
 from app.repositories.resume import PublicResume
-from app.schemas import ResumeSource
+from app.schemas import ContactLink, Profile, ResumeSource
 
 
 @pytest.fixture
@@ -42,7 +47,7 @@ def source() -> ResumeSource:
                     "id": "private-work",
                     "employer": "Private Co",
                     "title": "Lead",
-                    "summary": "Private work.",
+                    "summary": "private fixture text",
                     "order": 2,
                     "visibility": "private",
                 },
@@ -61,7 +66,83 @@ def public_resume() -> PublicResume:
                 "headline": "Software engineer",
                 "summary": "Public summary.",
                 "visibility": "published",
-            }
+            },
+            "contact_links": [
+                {
+                    "id": "portfolio",
+                    "label": "Portfolio",
+                    "url": "https://example.com",
+                    "order": 0,
+                    "visibility": "published",
+                }
+            ],
         }
     )
-    return PublicResume(profile=source.profile)
+    return PublicResume(
+        profile=source.profile,
+        contact_links=source.contact_links,
+    )
+
+
+@pytest.fixture
+def app_client(tmp_path, monkeypatch):
+    fallback_path = tmp_path / "fallback.json"
+    public_resume = PublicResume(
+        profile=Profile(
+            id="profile",
+            name="Ada Example",
+            headline="Software engineer",
+            summary="Public summary.",
+            visibility="published",
+        ),
+        contact_links=[
+            ContactLink(
+                id="portfolio",
+                label="Portfolio",
+                url="https://example.com",
+                order=0,
+                visibility="published",
+            )
+        ],
+    )
+    write_public_fallback(public_resume, fallback_path)
+
+    def fail_session_factory():
+        raise OperationalError("database unavailable", {}, ConnectionError("offline"))
+
+    monkeypatch.setattr("app.routes.resume.SessionLocal", fail_session_factory)
+    app = create_app(Settings(environment="test", database_url="sqlite://", fallback_path=fallback_path))
+    with TestClient(app) as client:
+        yield client
+
+
+@pytest.fixture
+def outage_client(tmp_path, monkeypatch):
+    fallback_path = tmp_path / "fallback.json"
+    public_resume = PublicResume(
+        profile=Profile(
+            id="profile",
+            name="Ada Example",
+            headline="Software engineer",
+            summary="Public summary.",
+            visibility="published",
+        ),
+        contact_links=[
+            ContactLink(
+                id="portfolio",
+                label="Portfolio",
+                url="https://example.com",
+                order=0,
+                visibility="published",
+            )
+        ],
+    )
+    write_public_fallback(public_resume, fallback_path)
+
+    def fail_session_factory():
+        raise OperationalError("database unavailable", {}, ConnectionError("offline"))
+
+    monkeypatch.setattr("app.routes.resume.SessionLocal", fail_session_factory)
+    app = create_app(Settings(environment="test", database_url="sqlite://", fallback_path=fallback_path))
+    with TestClient(app) as client:
+        yield client

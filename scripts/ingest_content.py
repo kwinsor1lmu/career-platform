@@ -72,8 +72,11 @@ def main() -> int:
         )
         return 1
     except ValidationError as error:
-        print(f"Ingestion failed for {args.path}:", file=sys.stderr)
-        print(error, file=sys.stderr)
+        if any(item.get("type") == "json_invalid" for item in error.errors()):
+            print(f"Ingestion failed: invalid JSON in {args.path}", file=sys.stderr)
+        else:
+            print(f"Ingestion failed for {args.path}:", file=sys.stderr)
+            print(error, file=sys.stderr)
         return 1
 
     Base.metadata.create_all(bind=engine)

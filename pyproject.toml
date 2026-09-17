@@ -28,3 +28,8 @@ packages = ["app"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+  "integration: end-to-end integration checks",
+  "accessibility: accessibility checks",
+]
