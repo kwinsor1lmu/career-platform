@@ -27,12 +27,18 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, value: str) -> str:
-        if not value.startswith(("sqlite://", "postgresql://", "postgresql+psycopg://")):
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError(
+                "DATABASE_URL is not set or empty. Example: "
+                "DATABASE_URL=sqlite:///./data/app.db"
+            )
+        if not normalized.startswith(("sqlite://", "postgresql://", "postgresql+psycopg://")):
             raise ValueError(
                 "DATABASE_URL must use sqlite://, postgresql://, or "
                 "postgresql+psycopg://"
             )
-        return value
+        return normalized
 
     @model_validator(mode="after")
     def validate_production_configuration(self) -> "Settings":
