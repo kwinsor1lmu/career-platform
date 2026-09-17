@@ -14,7 +14,7 @@ Output:
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-7 passed, 1 warning in 1.65s
+7 passed, 1 warning in 2.85s
 ```
 
 2. `cd /workspaces/career-platform/.worktrees/personal-resume-platform && pytest -q`
@@ -29,7 +29,7 @@ Output:
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-30 passed, 1 warning in 2.87s
+30 passed, 1 warning in 3.85s
 ```
 
 ## Self-review
@@ -50,3 +50,9 @@ Output:
 - Tightened the actual `python scripts/ingest_content.py ...` release path to validate `Settings()` before ingesting, reject invalid fallback JSON before touching the fallback, and print actionable `stderr` without a traceback for configuration and release errors.
 - Expanded `tests/test_release_failure.py` to exercise the CLI subprocess for malformed source, missing production config, invalid fallback, and database-connection failure, while asserting the last good fallback remains byte-for-byte unchanged.
 - Re-ran the focused and full suites; both pass with the stricter release safety checks in place.
+
+## Fix round 2 report
+
+- Added the missing CLI-level release-step failure test for an unreachable PostgreSQL target during the real `python scripts/ingest_content.py` path, asserting a nonzero exit code, actionable stderr text, and no traceback.
+- Corrected the invalid-fallback subprocess case to create a valid fallback at the exact target path, then deliberately replace it with invalid JSON before invoking the CLI and assert that the target file bytes remain exactly as corrupted (the script must not rewrite it).
+- Re-ran the focused and full suite; both remain green with the final release guardrail checks in place.

@@ -111,23 +111,23 @@ def test_release_fails_on_missing_production_config_and_keeps_previous_fallback(
     assert fallback_path.read_text(encoding="utf-8") == original
 
 
-def test_release_fails_on_invalid_fallback_and_keeps_previous_fallback(tmp_path):
+def test_release_fails_on_invalid_fallback_and_keeps_target_bytes_unchanged(tmp_path):
     source_path = _valid_source(tmp_path / "resume.json")
-    previous_fallback = tmp_path / "previous-fallback.json"
-    baseline = _valid_fallback(previous_fallback)
-    invalid_fallback = tmp_path / "fallback.json"
-    invalid_fallback.write_text('{"schema_version": 1, "generated_at": "bad"}', encoding="utf-8")
+    fallback_path = tmp_path / "fallback.json"
+    previous_bytes = _valid_fallback(fallback_path).encode("utf-8")
+    invalid_bytes = b'{"schema_version": 1, "generated_at": "bad"}'
+    fallback_path.write_bytes(invalid_bytes)
 
-    result = _run_ingest(source_path, fallback_path=invalid_fallback)
+    result = _run_ingest(source_path, fallback_path=fallback_path)
 
     assert result.returncode != 0
     assert "invalid fallback" in result.stderr.lower()
     assert "Traceback" not in result.stderr
-    assert previous_fallback.read_text(encoding="utf-8") == baseline
-    assert invalid_fallback.read_text(encoding="utf-8") == '{"schema_version": 1, "generated_at": "bad"}'
+    assert fallback_path.read_bytes() == invalid_bytes
+    assert fallback_path.read_bytes() != previous_bytes
 
 
-def test_release_fails_when_database_connection_fails_and_keeps_previous_fallback(tmp_path):
+def test_release_fails_when_database_connection_fails_during_release_step_and_keeps_previous_fallback(tmp_path):
     source_path = _valid_source(tmp_path / "resume.json")
     fallback_path = tmp_path / "fallback.json"
     original = _valid_fallback(fallback_path)
