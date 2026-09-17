@@ -32,7 +32,7 @@ cp .env.example .env
 ./scripts/dev.sh
 ```
 
-Docker Compose uses the same script. It passes configuration through `.env`, runs as a non-root user, and persists only the host `./data` directory:
+Docker Compose uses the same script. It passes configuration through `.env`, runs as a non-root user aligned to `HOST_UID`/`HOST_GID` (default `1000:1000`), and persists only the host `./data` directory. Set those two values to the numeric owner of the host checkout before building if your environment uses different IDs; this prevents a host-created `data/app.db` with mode `644` from becoming unwritable in the container:
 
 ```bash
 cp .env.example .env
