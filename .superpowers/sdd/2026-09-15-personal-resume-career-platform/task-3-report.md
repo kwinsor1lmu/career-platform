@@ -138,3 +138,37 @@ INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogener
 INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.comments
 No new upgrade operations detected.
 ```
+
+## Fix round 2: composite ownership and SQLite enforcement
+
+### Root cause
+The first composite FK fix was still invalid because the referenced pair `(profiles.id, profiles.owner_id)` was not unique. PostgreSQL rejects that relationship, and SQLite enforces the FK only when the referenced columns are unique or primary-key-backed.
+
+### Fix
+- Added `UniqueConstraint("id", "owner_id", name="uq_profiles_id_owner_id")` to `Profile` in `app/models.py`.
+- Added the same unique constraint to `alembic/versions/0001_initial_resume_schema.py` so the migration matches the model metadata.
+- Added a focused ownership-boundary test that inserts a valid `(profile_id, owner_id)` pair and asserts a mismatched owner raises `sqlalchemy.exc.IntegrityError` under SQLite foreign key enforcement.
+
+### Verification commands and output
+Command:
+```bash
+cd /workspaces/career-platform/.worktrees/personal-resume-platform && rm -rf data && mkdir -p data && pytest tests/db/test_schema.py -q && DATABASE_URL=sqlite:///./data/app.db alembic upgrade head && DATABASE_URL=sqlite:///./data/app.db alembic check
+```
+
+Output:
+```text
+..                                                                       [100%]
+2 passed in 0.70s
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001, Initial resume schema
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.schemas
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.tables
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.types
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.constraints
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.defaults
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.comments
+No new upgrade operations detected.
+```

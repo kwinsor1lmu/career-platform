@@ -30,6 +30,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("CURRENT_TIMESTAMP"), nullable=False),
         sa.CheckConstraint("visibility IN ('draft', 'private', 'published')", name="ck_profiles_visibility"),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("id", "owner_id", name="uq_profiles_id_owner_id"),
     )
     op.create_index("ix_profiles_owner_id", "profiles", ["owner_id"], unique=False)
     op.create_index("ix_profiles_owner_visibility", "profiles", ["owner_id", "visibility"], unique=False)

@@ -42,6 +42,7 @@ class Profile(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint("visibility IN ('draft', 'private', 'published')", name="ck_profiles_visibility"),
+        UniqueConstraint("id", "owner_id", name="uq_profiles_id_owner_id"),
         Index("ix_profiles_owner_visibility", "owner_id", "visibility"),
     )
 
