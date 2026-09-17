@@ -11,16 +11,21 @@ if str(ROOT) not in sys.path:
 
 from pydantic import ValidationError
 
+from app.content.fallback import write_public_fallback
 from app.content.ingest import ingest_resume
 from app.content.loader import load_resume_source
+from app.config import Settings
 from app.db import SessionLocal, engine
 from app.models import Base
+from app.repositories.resume import get_public_resume
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Ingest a resume content file into the database")
+    parser = argparse.ArgumentParser(description="Ingest resume content and publish the public fallback")
     parser.add_argument("path", type=Path, help="path to the resume JSON file")
+    parser.add_argument("--fallback", type=Path, default=None, help="path to the public fallback JSON")
     args = parser.parse_args()
+    fallback_path = args.fallback or Settings().fallback_path
 
     try:
         source = load_resume_source(args.path)
@@ -50,6 +55,8 @@ def main() -> int:
     try:
         ingest_resume(session, source)
         session.commit()
+        public_resume = get_public_resume(session)
+        write_public_fallback(public_resume, fallback_path)
     except Exception as exc:  # pragma: no cover - CLI safety net
         session.rollback()
         print(f"Ingestion failed: {exc}", file=sys.stderr)
@@ -58,7 +65,7 @@ def main() -> int:
         session.close()
 
     print(
-        f"Ingested profile {source.profile.id} from {args.path}: "
+        f"Ingested profile {source.profile.id} from {args.path} and published fallback {fallback_path}: "
         f"{len(source.experience)} experience, {len(source.education)} education, "
         f"{len(source.skills)} skills, {len(source.certifications)} certifications, "
         f"and {len(source.contact_links)} contact links."
