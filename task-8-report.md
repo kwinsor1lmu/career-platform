@@ -44,3 +44,9 @@ Output:
 
 - FastAPI TestClient still emits a Starlette deprecation warning when using the httpx-based stack; it does not affect runtime correctness, but the dependency can be upgraded in a future cleanup.
 - The project still depends on explicit runtime validation and controlled fallback content for public release safety; any future changes should maintain the same non-silent failure behavior.
+
+## Follow-up fix report
+
+- Tightened the actual `python scripts/ingest_content.py ...` release path to validate `Settings()` before ingesting, reject invalid fallback JSON before touching the fallback, and print actionable `stderr` without a traceback for configuration and release errors.
+- Expanded `tests/test_release_failure.py` to exercise the CLI subprocess for malformed source, missing production config, invalid fallback, and database-connection failure, while asserting the last good fallback remains byte-for-byte unchanged.
+- Re-ran the focused and full suites; both pass with the stricter release safety checks in place.

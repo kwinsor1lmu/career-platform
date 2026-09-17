@@ -17,8 +17,6 @@ from app.content.fallback import load_public_fallback, write_public_fallback
 from app.content.ingest import ingest_resume
 from app.content.loader import load_resume_source
 from app.config import Settings
-from app.db import SessionLocal, engine
-from app.models import Base
 from app.repositories.resume import get_public_resume
 
 
@@ -51,7 +49,20 @@ def main() -> int:
     parser.add_argument("path", type=Path, help="path to the resume JSON file")
     parser.add_argument("--fallback", type=Path, default=None, help="path to the public fallback JSON")
     args = parser.parse_args()
-    fallback_path = args.fallback or Settings().fallback_path
+
+    try:
+        settings = Settings()
+    except ValueError as error:
+        print(f"Ingestion failed: invalid configuration: {error}", file=sys.stderr)
+        return 1
+
+    fallback_path = args.fallback or settings.fallback_path
+    if fallback_path.exists():
+        try:
+            load_public_fallback(fallback_path)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+            print(f"Ingestion failed: invalid fallback {fallback_path}: {error}", file=sys.stderr)
+            return 1
 
     try:
         source = load_resume_source(args.path)
@@ -79,16 +90,23 @@ def main() -> int:
             print(error, file=sys.stderr)
         return 1
 
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
+    from app.db import SessionLocal, engine
+    from app.models import Base
+
     try:
-        release_resume(session, source, fallback_path)
+        Base.metadata.create_all(bind=engine)
+        session = SessionLocal()
+        try:
+            release_resume(session, source, fallback_path)
+        except Exception as exc:  # pragma: no cover - CLI safety net
+            session.rollback()
+            print(f"Ingestion failed: {exc}", file=sys.stderr)
+            return 1
+        finally:
+            session.close()
     except Exception as exc:  # pragma: no cover - CLI safety net
-        session.rollback()
         print(f"Ingestion failed: {exc}", file=sys.stderr)
         return 1
-    finally:
-        session.close()
 
     print(
         f"Ingested profile {source.profile.id} from {args.path} and published fallback {fallback_path}: "

@@ -1,96 +1,148 @@
-import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
-from sqlalchemy.exc import OperationalError
-
-from app.config import Settings
-from app.content.fallback import load_public_fallback
-from app.schemas import ResumeSource
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "ingest_content.py"
 
 
-def _load_release_module():
-    spec = importlib.util.spec_from_file_location("release_ingest", SCRIPT)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-def test_release_fails_on_malformed_source(tmp_path):
-    bad_source = tmp_path / "malformed.json"
-    bad_source.write_text('{"profile":', encoding="utf-8")
-
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), str(bad_source)],
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode != 0
-    assert "Ingestion failed" in result.stderr
-    assert "invalid JSON" in result.stderr
-    assert "Traceback" not in result.stderr
-
-
-def test_release_fails_when_production_database_is_missing():
-    with pytest.raises(ValueError, match="DATABASE_URL must point to PostgreSQL in production"):
-        Settings(environment="production", database_url="sqlite:///./data/app.db")
-
-
-def test_release_fails_on_invalid_fallback(tmp_path):
-    fallback_path = tmp_path / "fallback.json"
-    fallback_path.write_text(
-        json.dumps(
+def _valid_source(path: Path) -> Path:
+    payload = {
+        "profile": {
+            "id": "profile",
+            "name": "Ada Example",
+            "headline": "Software engineer",
+            "summary": "Public summary.",
+            "visibility": "published",
+        },
+        "experience": [
             {
-                "schema_version": 1,
-                "generated_at": "2024-01-01T00:00:00+00:00",
-                "resume": {
-                    "profile": {
-                        "id": "profile",
-                        "name": "Ada Example",
-                        "headline": "Software engineer",
-                        "summary": "Public summary.",
-                        "visibility": "private",
-                    }
-                },
+                "id": "exp-1",
+                "employer": "Example Co",
+                "title": "Engineer",
+                "start_date": "2020-01",
+                "end_date": None,
+                "summary": "Built systems.",
+                "order": 0,
+                "visibility": "published",
             }
-        ),
-        encoding="utf-8",
-    )
+        ],
+        "education": [],
+        "skills": [],
+        "certifications": [],
+        "contact_links": [],
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
 
-    with pytest.raises(ValueError):
-        load_public_fallback(fallback_path)
 
-
-def test_release_fails_when_migration_or_release_step_errors(tmp_path):
-    module = _load_release_module()
-    release_resume = module.release_resume
-    source = ResumeSource.model_validate(
-        {
+def _valid_fallback(path: Path) -> str:
+    payload = {
+        "schema_version": 1,
+        "generated_at": "2024-01-01T00:00:00+00:00",
+        "resume": {
             "profile": {
                 "id": "profile",
                 "name": "Ada Example",
                 "headline": "Software engineer",
                 "summary": "Public summary.",
                 "visibility": "published",
-            }
-        }
+            },
+            "experience": [],
+            "education": [],
+            "skills": [],
+            "certifications": [],
+            "contact_links": [],
+        },
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path.read_text(encoding="utf-8")
+
+
+def _run_ingest(source_path: Path, *, fallback_path: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    command_env = os.environ.copy()
+    if env:
+        command_env.update(env)
+    command_env.setdefault("ENVIRONMENT", "development")
+    command_env.setdefault("DATABASE_URL", "sqlite:///./data/app.db")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), str(source_path), "--fallback", str(fallback_path)],
+        capture_output=True,
+        text=True,
+        env=command_env,
+        cwd=str(ROOT),
     )
+    return result
+
+
+def test_release_fails_on_malformed_source_and_keeps_previous_fallback(tmp_path):
+    source_path = tmp_path / "malformed.json"
+    source_path.write_text('{"profile":', encoding="utf-8")
     fallback_path = tmp_path / "fallback.json"
+    original = _valid_fallback(fallback_path)
 
-    class FailingSession:
-        def begin(self):
-            raise OperationalError("migration failed", {}, RuntimeError("migration failed"))
+    result = _run_ingest(source_path, fallback_path=fallback_path)
 
-        def rollback(self):
-            return None
+    assert result.returncode != 0
+    assert "Ingestion failed" in result.stderr
+    assert "invalid JSON" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert fallback_path.read_text(encoding="utf-8") == original
 
-    with pytest.raises(OperationalError, match="migration failed"):
-        release_resume(FailingSession(), source, fallback_path)
+
+def test_release_fails_on_missing_production_config_and_keeps_previous_fallback(tmp_path):
+    source_path = _valid_source(tmp_path / "resume.json")
+    fallback_path = tmp_path / "fallback.json"
+    original = _valid_fallback(fallback_path)
+
+    result = _run_ingest(
+        source_path,
+        fallback_path=fallback_path,
+        env={"ENVIRONMENT": "production", "DATABASE_URL": "sqlite:///./data/app.db"},
+    )
+
+    assert result.returncode != 0
+    assert "invalid configuration" in result.stderr.lower()
+    assert "postgresql" in result.stderr.lower()
+    assert fallback_path.read_text(encoding="utf-8") == original
+
+
+def test_release_fails_on_invalid_fallback_and_keeps_previous_fallback(tmp_path):
+    source_path = _valid_source(tmp_path / "resume.json")
+    previous_fallback = tmp_path / "previous-fallback.json"
+    baseline = _valid_fallback(previous_fallback)
+    invalid_fallback = tmp_path / "fallback.json"
+    invalid_fallback.write_text('{"schema_version": 1, "generated_at": "bad"}', encoding="utf-8")
+
+    result = _run_ingest(source_path, fallback_path=invalid_fallback)
+
+    assert result.returncode != 0
+    assert "invalid fallback" in result.stderr.lower()
+    assert "Traceback" not in result.stderr
+    assert previous_fallback.read_text(encoding="utf-8") == baseline
+    assert invalid_fallback.read_text(encoding="utf-8") == '{"schema_version": 1, "generated_at": "bad"}'
+
+
+def test_release_fails_when_database_connection_fails_and_keeps_previous_fallback(tmp_path):
+    source_path = _valid_source(tmp_path / "resume.json")
+    fallback_path = tmp_path / "fallback.json"
+    original = _valid_fallback(fallback_path)
+
+    result = _run_ingest(
+        source_path,
+        fallback_path=fallback_path,
+        env={
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:pass@127.0.0.1:1/does-not-exist",
+        },
+    )
+
+    assert result.returncode != 0
+    assert "Ingestion failed" in result.stderr
+    assert "database" in result.stderr.lower() or "connection" in result.stderr.lower()
+    assert "Traceback" not in result.stderr
+    assert fallback_path.read_text(encoding="utf-8") == original
