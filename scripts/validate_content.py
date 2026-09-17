@@ -24,15 +24,28 @@ def main() -> int:
     except FileNotFoundError:
         print(f"Validation failed: file not found: {args.path}", file=sys.stderr)
         return 1
+    except UnicodeDecodeError as error:
+        print(
+            f"Validation failed: unable to read {args.path} as UTF-8: {error.reason}",
+            file=sys.stderr,
+        )
+        return 1
+    except OSError as error:
+        print(f"Validation failed: unable to read {args.path}: {error}", file=sys.stderr)
+        return 1
     except json.JSONDecodeError as error:
         print(
-            f"Validation failed: invalid JSON at line {error.lineno}, column {error.colno}: {error.msg}",
+            f"Validation failed: invalid JSON in {args.path} at line {error.lineno}, "
+            f"column {error.colno}: {error.msg}",
             file=sys.stderr,
         )
         return 1
     except ValidationError as error:
-        print(f"Validation failed for {args.path}:", file=sys.stderr)
-        print(error, file=sys.stderr)
+        if any(item.get("type") == "json_invalid" for item in error.errors()):
+            print(f"Validation failed: invalid JSON in {args.path}", file=sys.stderr)
+        else:
+            print(f"Validation failed for {args.path}:", file=sys.stderr)
+            print(error, file=sys.stderr)
         return 1
 
     print(
