@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="site-header">
+  <div class="container profile" aria-labelledby="profile-name">
+    <p class="eyebrow">Resume</p>
+    <h1 id="profile-name">{{ resume.profile.name }}</h1>
+    <p class="headline">{{ resume.profile.headline }}</p>
+    <p class="summary">{{ resume.profile.summary }}</p>
+  </div>
+</header>
+
+<main id="main-content" class="container">
+  <section id="experience" class="resume-section" aria-labelledby="experience-heading">
+    <h2 id="experience-heading">Experience</h2>
+    {% if resume.experience %}
+    <ol class="entry-list">
+      {% for item in resume.experience %}
+      <li class="entry">
+        <div class="entry-heading">
+          <h3>{{ item.title }}</h3>
+          <p class="entry-meta">{{ item.employer }} · {{ item.start_date or "" }}{% if item.end_date %} – {{ item.end_date }}{% else %} – Present{% endif %}</p>
+        </div>
+        <p>{{ item.summary }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}<p class="muted">No experience listed.</p>{% endif %}
+  </section>
+
+  <section id="education" class="resume-section" aria-labelledby="education-heading">
+    <h2 id="education-heading">Education</h2>
+    {% if resume.education %}
+    <ul class="entry-list">
+      {% for item in resume.education %}
+      <li class="entry">
+        <div class="entry-heading">
+          <h3>{{ item.degree }}</h3>
+          <p class="entry-meta">{{ item.institution }} · {{ item.start_date or "" }}{% if item.end_date %} – {{ item.end_date }}{% endif %}</p>
+        </div>
+        <p>{{ item.summary }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No education listed.</p>{% endif %}
+  </section>
+
+  <section id="skills" class="resume-section" aria-labelledby="skills-heading">
+    <h2 id="skills-heading">Skills</h2>
+    {% if resume.skills %}
+    <ul class="tag-list">
+      {% for item in resume.skills %}
+      <li>{{ item.name }}{% if item.level %}<span class="skill-level"> — {{ item.level }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No skills listed.</p>{% endif %}
+  </section>
+
+  <section id="certifications" class="resume-section" aria-labelledby="certifications-heading">
+    <h2 id="certifications-heading">Certifications</h2>
+    {% if resume.certifications %}
+    <ul class="entry-list">
+      {% for item in resume.certifications %}
+      <li class="entry">
+        <div class="entry-heading">
+          <h3>{{ item.name }}</h3>
+          <p class="entry-meta">{{ item.issuer }}{% if item.start_date %} · {{ item.start_date }}{% endif %}{% if item.end_date %} – {{ item.end_date }}{% endif %}</p>
+        </div>
+        <p>{{ item.summary }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No certifications listed.</p>{% endif %}
+  </section>
+
+  <section id="contact" class="resume-section contact" aria-labelledby="contact-heading">
+    <h2 id="contact-heading">Contact</h2>
+    {% if resume.contact_links %}
+    <ul class="contact-list">
+      {% for item in resume.contact_links %}
+      <li><a href="{{ item.url }}" rel="me">{{ item.label }}<span class="visually-hidden"> (external link)</span></a></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">Contact links are not currently available.</p>{% endif %}
+  </section>
+</main>
+{% endblock %}

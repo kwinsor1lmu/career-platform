@@ -1,0 +1,80 @@
+{
+  "profile": {
+    "id": "profile",
+    "name": "Ada Example",
+    "headline": "Software engineer building useful systems",
+    "summary": "Example content for the personal resume platform.",
+    "visibility": "published"
+  },
+  "experience": [
+    {
+      "id": "example-co-engineer",
+      "employer": "Example Co",
+      "title": "Software Engineer",
+      "start_date": "2020-01",
+      "end_date": null,
+      "summary": "Built reliable systems and documented the work.",
+      "order": 1,
+      "visibility": "published"
+    },
+    {
+      "id": "private-project",
+      "employer": "Private Example Project",
+      "title": "Technical Lead",
+      "start_date": "2019",
+      "end_date": "2019-12",
+      "summary": "Draft record reserved for future publication.",
+      "order": 2,
+      "visibility": "private"
+    }
+  ],
+  "education": [
+    {
+      "id": "example-university",
+      "institution": "Example University",
+      "degree": "BSc Computer Science",
+      "start_date": "2016-09",
+      "end_date": "2020-06",
+      "summary": "Example academic history.",
+      "order": 1,
+      "visibility": "published"
+    }
+  ],
+  "skills": [
+    {
+      "id": "python",
+      "name": "Python",
+      "level": "Advanced",
+      "order": 1,
+      "visibility": "published"
+    },
+    {
+      "id": "prototype-skill",
+      "name": "Unpublished skill",
+      "level": "Draft",
+      "order": 2,
+      "visibility": "draft"
+    }
+  ],
+  "certifications": [
+    {
+      "id": "example-certification",
+      "name": "Example Cloud Certificate",
+      "issuer": "Example Institute",
+      "start_date": "2023",
+      "end_date": null,
+      "summary": "Representative certification record.",
+      "order": 1,
+      "visibility": "published"
+    }
+  ],
+  "contact_links": [
+    {
+      "id": "github",
+      "label": "GitHub",
+      "url": "https://github.com/example",
+      "order": 1,
+      "visibility": "published"
+    }
+  ]
+}
