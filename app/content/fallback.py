@@ -45,11 +45,13 @@ def write_public_fallback(resume: PublicResume, path: Path) -> None:
             temporary.flush()
             os.fsync(temporary.fileno())
         os.replace(temporary_name, path)
-        directory_fd = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        # Windows cannot open a directory to fsync it, so the directory sync is POSIX-only.
+        if os.name != "nt":
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     except BaseException:
         try:
             os.unlink(temporary_name)

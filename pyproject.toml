@@ -21,6 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0.0",
+  "httpx2>=2.13.1",
 ]
 
 [tool.setuptools]
