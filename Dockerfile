@@ -1,8 +1,10 @@
 FROM python:3.12-slim AS runtime
 
+# FORWARDED_ALLOW_IPS lets uvicorn trust the hosting proxy's X-Forwarded-Proto so url_for() builds https:// URLs.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    FORWARDED_ALLOW_IPS="*"
 
 WORKDIR /app
 
