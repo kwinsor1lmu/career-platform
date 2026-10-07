@@ -38,6 +38,9 @@ class Settings(BaseSettings):
                 "DATABASE_URL must use sqlite://, postgresql://, or "
                 "postgresql+psycopg://"
             )
+        if normalized.startswith("postgresql://"):
+            # Railway and most hosts hand out postgresql://, which older SQLAlchemy maps to psycopg2.
+            normalized = "postgresql+psycopg://" + normalized.removeprefix("postgresql://")
         return normalized
 
     @model_validator(mode="after")
