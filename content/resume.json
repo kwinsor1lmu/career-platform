@@ -1,78 +1,50 @@
 {
   "profile": {
     "id": "profile",
-    "name": "Ada Example",
-    "headline": "Software engineer building useful systems",
-    "summary": "Example content for the personal resume platform.",
+    "name": "Kenneth Winsor",
+    "headline": "Business Administration Student at Loyola Marymount University | Events, Operations & Guest Experience",
+    "summary": "Business Administration student at Loyola Marymount University with hands-on experience behind the scenes of university special events. As personal assistant to LMU's Special Events Coordinator, I supported event planning, day-of operations, and guest services. I bring strong organization, administrative skills, and fluent Spanish to teams that value reliable execution and a great guest experience.",
     "visibility": "published"
   },
   "experience": [
     {
-      "id": "example-co-engineer",
-      "employer": "Example Co",
-      "title": "Software Engineer",
-      "start_date": "2020-01",
-      "end_date": null,
-      "summary": "Built reliable systems and documented the work.",
+      "id": "lmu-event-staff",
+      "employer": "Loyola Marymount University",
+      "title": "Event Staff — Assistant to the Special Events Coordinator",
+      "start_date": "2023-09",
+      "end_date": "2024-05",
+      "summary": "Served as personal assistant to the Special Events Coordinator at Loyola Marymount University in Los Angeles, supporting the planning and day-of execution of campus events, coordinating administrative tasks, and assisting guests.",
       "order": 1,
       "visibility": "published"
-    },
-    {
-      "id": "private-project",
-      "employer": "Private Example Project",
-      "title": "Technical Lead",
-      "start_date": "2019",
-      "end_date": "2019-12",
-      "summary": "Draft record reserved for future publication.",
-      "order": 2,
-      "visibility": "private"
     }
   ],
   "education": [
     {
-      "id": "example-university",
-      "institution": "Example University",
-      "degree": "BSc Computer Science",
-      "start_date": "2016-09",
-      "end_date": "2020-06",
-      "summary": "Example academic history.",
+      "id": "lmu-business-administration",
+      "institution": "Loyola Marymount University",
+      "degree": "Business Administration (Undergraduate)",
+      "start_date": "2023-08",
+      "summary": "Undergraduate studies in LMU's College of Business Administration, Los Angeles, CA.",
       "order": 1,
       "visibility": "published"
     }
   ],
   "skills": [
-    {
-      "id": "python",
-      "name": "Python",
-      "level": "Advanced",
-      "order": 1,
-      "visibility": "published"
-    },
-    {
-      "id": "prototype-skill",
-      "name": "Unpublished skill",
-      "level": "Draft",
-      "order": 2,
-      "visibility": "draft"
-    }
+    { "id": "event-planning", "name": "Event Planning", "order": 1, "visibility": "published" },
+    { "id": "events-management", "name": "Events Management", "order": 2, "visibility": "published" },
+    { "id": "guest-services", "name": "Guest Services", "order": 3, "visibility": "published" },
+    { "id": "office-management", "name": "Office Management", "order": 4, "visibility": "published" },
+    { "id": "administrative-support", "name": "Administrative Support", "order": 5, "visibility": "published" },
+    { "id": "executive-assistance", "name": "Executive & Personal Assistance", "order": 6, "visibility": "published" },
+    { "id": "marketing", "name": "Marketing", "order": 7, "visibility": "published" },
+    { "id": "spanish", "name": "Spanish", "level": "Fluent", "order": 8, "visibility": "published" }
   ],
-  "certifications": [
-    {
-      "id": "example-certification",
-      "name": "Example Cloud Certificate",
-      "issuer": "Example Institute",
-      "start_date": "2023",
-      "end_date": null,
-      "summary": "Representative certification record.",
-      "order": 1,
-      "visibility": "published"
-    }
-  ],
+  "certifications": [],
   "contact_links": [
     {
       "id": "github",
       "label": "GitHub",
-      "url": "https://github.com/example",
+      "url": "https://github.com/kwinsor1",
       "order": 1,
       "visibility": "published"
     }
