@@ -3,6 +3,13 @@ import pytest
 from app.config import Settings
 
 
+@pytest.fixture(autouse=True)
+def clean_settings_env(monkeypatch):
+    # A shell exported for a production rehearsal must not change what these tests see.
+    for name in ("ENVIRONMENT", "DATABASE_URL"):
+        monkeypatch.delenv(name, raising=False)
+
+
 def test_plain_postgresql_url_uses_psycopg_driver():
     settings = Settings(_env_file=None, database_url="postgresql://user:pw@postgres.railway.internal:5432/railway")
 
