@@ -88,3 +88,14 @@ def home(request: Request):
 @router.get("/resume", name="resume-page")
 def resume_page(request: Request):
     return _render_resume(request)
+
+
+@router.get("/privacy", name="privacy-page")
+def privacy_page(request: Request):
+    settings = request.app.state.settings
+    resume, _ = load_resume_with_fallback(SessionLocal, settings.fallback_path)
+    return templates.TemplateResponse(
+        request=request,
+        name="privacy.html",
+        context={"resume": resume, "canonical_url": str(request.url_for("privacy-page"))},
+    )

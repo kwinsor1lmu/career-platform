@@ -1,22 +1,26 @@
+{% set ga_id = request.app.state.settings.ga_measurement_id %}
 <!doctype html>
-<html lang="en">
+<html lang="en"{% if ga_id %} data-ga-id="{{ ga_id }}"{% endif %}>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ resume.profile.name }} — {{ resume.profile.headline }}">
-    <title>{{ resume.profile.name }} | {{ resume.profile.headline }}</title>
+    <meta name="description" content="{% block description %}{{ resume.profile.name }} — {{ resume.profile.headline }}{% endblock %}">
+    <title>{% block title %}{{ resume.profile.name }} | {{ resume.profile.headline }}{% endblock %}</title>
     <link rel="canonical" href="{{ canonical_url }}">
+    {% block social_meta %}
     <meta property="og:type" content="profile">
     <meta property="og:title" content="{{ resume.profile.name }}">
     <meta property="og:description" content="{{ resume.profile.headline }}">
     <meta property="og:url" content="{{ canonical_url }}">
     <meta name="twitter:card" content="summary">
+    {% endblock %}
     <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#121418" media="(prefers-color-scheme: dark)">
     <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
     <link rel="preload" href="{{ url_for('static', path='fonts/ibm-plex-sans-400.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ url_for('static', path='fonts/ibm-plex-sans-600.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    {% block structured_data %}
     <script type="application/ld+json">{{ {
       "@context": "https://schema.org",
       "@type": "Person",
@@ -26,9 +30,27 @@
       "url": canonical_url,
       "sameAs": resume.contact_links | map(attribute="url") | map("string") | reject("mailto") | list,
     } | tojson }}</script>
+    {% endblock %}
+    {% if ga_id %}<script src="{{ url_for('static', path='consent.js') }}" defer></script>{% endif %}
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
     {% block content %}{% endblock %}
+    <footer class="site-footer">
+      <div class="container">
+        <a href="{{ url_for('privacy-page') }}">Privacy</a>
+        {% if ga_id %}<button class="footer-button" type="button" data-consent-open hidden>Cookie settings</button>{% endif %}
+      </div>
+    </footer>
+    {% if ga_id %}
+    <section class="consent-banner" data-consent-banner aria-labelledby="consent-heading" hidden>
+      <h2 id="consent-heading">Analytics cookies</h2>
+      <p>May I use Google Analytics to count page views and clicks on links to other sites? It sets cookies and sends visit data to Google. Nothing is sent unless you accept. <a href="{{ url_for('privacy-page') }}">Privacy details</a></p>
+      <div class="consent-actions">
+        <button type="button" data-consent-accept>Accept</button>
+        <button type="button" data-consent-reject>Reject</button>
+      </div>
+    </section>
+    {% endif %}
   </body>
 </html>

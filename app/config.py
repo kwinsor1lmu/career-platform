@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/app.db"
     content_path: Path = Path("content/resume.json")
     fallback_path: Path = Path("data/fallback.json")
+    # Google Analytics 4 ID (e.g. G-XXXXXXX). Empty disables analytics and the consent banner.
+    ga_measurement_id: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

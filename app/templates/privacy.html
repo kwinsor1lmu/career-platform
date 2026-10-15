@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy | {{ resume.profile.name }}{% endblock %}
+{% block description %}What this site records about visits, why, who receives it, and your choices.{% endblock %}
+{% block social_meta %}{% endblock %}
+{% block structured_data %}{% endblock %}
+
+{% block content %}
+<main id="main-content" class="container privacy">
+  <p class="privacy-back"><a href="{{ url_for('resume-home') }}">← {{ resume.profile.name }}</a></p>
+  <h1>Privacy</h1>
+  <p class="privacy-updated">Last updated <time datetime="2026-10-15">October 15, 2026</time></p>
+
+  <p>This is my personal resume site. It has no accounts, no forms, and no ads. Two things can record visits: the web server's logs, and Google Analytics if you allow it.</p>
+
+  <section class="sheet-section" aria-labelledby="short-heading">
+    <h2 id="short-heading">The short version</h2>
+    <ul>
+      <li>Google Analytics is off until you click Accept on the banner. If you accept, it counts which pages you view and which links to other sites you click, and it sets two cookies to do that.</li>
+      <li>The web server keeps a basic log of each request, including your IP address.</li>
+      <li>I use this only to see how the site is used. I don't sell it.</li>
+      <li>You can change your answer at any time with "Cookie settings" at the bottom of every page (see <a href="#choices-heading">Your choices</a>).</li>
+    </ul>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="server-heading">
+    <h2 id="server-heading">What the web server records</h2>
+    <p>Like almost every website, the server writes a line to its log for each request. The line holds:</p>
+    <ul>
+      <li>your IP address</li>
+      <li>the date and time</li>
+      <li>the page or file requested, and whether it loaded</li>
+      <li>the page that linked you here (the "referrer"), if your browser sends it</li>
+      <li>your browser's user-agent string, which names the browser and operating system</li>
+    </ul>
+    <p>I use these logs to keep the site running and to spot errors or abuse.</p>
+    <p>The site itself sets no cookies. When you answer the analytics banner, your browser saves the answer (<code>analytics-consent</code>, in local storage) so the site doesn't ask again. It stays on your device and is never sent to the server.</p>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="analytics-heading">
+    <h2 id="analytics-heading">What Google Analytics records</h2>
+    <p>Nothing is sent to Google until you click Accept. Before that, the page doesn't even load Google's script. Once you accept, each page loads the Google Analytics script from googletagmanager.com, and it sends Google:</p>
+    <ul>
+      <li><strong>Page views:</strong> the address and title of the page, and the page you came from.</li>
+      <li><strong>Outbound clicks:</strong> the address of a link to another site when you click it, such as my GitHub profile.</li>
+      <li><strong>Device and browser details:</strong> device type, operating system, browser, screen size and language.</li>
+      <li><strong>Approximate location:</strong> country, region and city, which Google works out from your IP address. Google says Google Analytics 4 does not log or store IP addresses.</li>
+      <li><strong>Timing:</strong> when you visited and how long you stayed.</li>
+    </ul>
+    <p>To recognize repeat visits, it stores a random ID in two cookies on this site: <code>_ga</code> and <code>_ga_RDD033RLK7</code>. By default they last up to two years, unless you delete them.</p>
+    <p>The site never sends Google your name or email. There are no forms, so there's nothing like that to send. I can't tell from Analytics who you are.</p>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="why-heading">
+    <h2 id="why-heading">Why</h2>
+    <p>I use the reports to see how many people visit, which sections they read, and whether they follow links like GitHub. That tells me whether the site is doing its job. I don't use the data for advertising.</p>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="who-heading">
+    <h2 id="who-heading">Who receives it</h2>
+    <ul>
+      <li><strong>Me.</strong> I read the Analytics reports and the server logs.</li>
+      <li><strong>Google</strong>, only if you accept analytics. Google runs Google Analytics and processes its data on Google's servers, which may be outside your country. Its use is covered by <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites that use its services</a>.</li>
+      <li><strong>Microsoft Azure</strong> hosts the server, so the server logs are stored on Microsoft's infrastructure.</li>
+      <li><strong>Cloudflare</strong> answers DNS lookups for kenwinsor.xyz. Your page visits don't pass through Cloudflare.</li>
+    </ul>
+    <p>I don't sell or share this data with anyone else. If you follow a link to another site, that site's own privacy policy applies.</p>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="retention-heading">
+    <h2 id="retention-heading">How long it's kept</h2>
+    <ul>
+      <li><strong>Google Analytics:</strong> detailed visit data is deleted after at most 14 months. Summary reports built from it, such as monthly visitor counts, may be kept longer.</li>
+      <li><strong>Server logs:</strong> about 14 days, after which the server's log rotation deletes them.</li>
+    </ul>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="choices-heading">
+    <h2 id="choices-heading">Your choices</h2>
+    <p>These are the choices you actually have:</p>
+    <ul>
+      <li><strong>Accept or reject on the banner.</strong> Analytics stays off unless you click Accept. Rejecting, or closing the page without answering, keeps it off. Accepting only allows analytics. The settings Google uses for ads stay set to "denied".</li>
+      <li><strong>Change your mind later.</strong> Use "Cookie settings" at the bottom of any page. If you switch to Reject, the site deletes the <code>_ga</code> cookies and reloads the page without Google's script. Data Google already received isn't deleted by this; see "Ask me" below.</li>
+      <li><strong>Block it in your browser.</strong> Block cookies for kenwinsor.xyz, or use a content blocker that blocks googletagmanager.com. The site works the same without Analytics.</li>
+      <li><strong>Use Google's opt-out add-on.</strong> The <a href="https://tools.google.com/dlpage/gaoptout">Google Analytics Opt-out Browser Add-on</a> stops Analytics on every site, on desktop browsers.</li>
+      <li><strong>Delete the cookies.</strong> Clearing <code>_ga</code> and <code>_ga_RDD033RLK7</code> resets the random ID, so later visits aren't linked to earlier ones.</li>
+      <li><strong>Ask me.</strong> If you send me the value of your <code>_ga</code> cookie, I can ask Google to delete the data tied to it. Email me at <a href="mailto:ken@kenwinsor.xyz">ken@kenwinsor.xyz</a>.</li>
+    </ul>
+    <p>This site doesn't read Do Not Track or Global Privacy Control signals. Analytics stays off unless you accept on the banner. With JavaScript turned off, the banner never appears and analytics never loads. The server logs are recorded for every request, and visitors can't turn them off.</p>
+  </section>
+
+  <section class="sheet-section" aria-labelledby="changes-heading">
+    <h2 id="changes-heading">Changes</h2>
+    <p>If what the site collects changes, I'll update this page and the date at the top.</p>
+  </section>
+</main>
+{% endblock %}
