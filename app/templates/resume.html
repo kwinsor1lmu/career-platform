@@ -1,87 +1,136 @@
 {% extends "base.html" %}
 
+{% macro date_range(start, end, ongoing_label=none) -%}
+  {%- if start -%}<time datetime="{{ start }}">{{ start | resume_date }}</time>{%- endif -%}
+  {%- if start and (end or ongoing_label) %} – {% endif -%}
+  {%- if end -%}<time datetime="{{ end }}">{{ end | resume_date }}</time>
+  {%- elif start and ongoing_label -%}{{ ongoing_label }}{%- endif -%}
+{%- endmacro %}
+
+{% macro contact_link(item, class_name) -%}
+  {%- set url = item.url | string -%}
+  <a class="{{ class_name }}" href="{{ url }}"{% if url is not mailto %} rel="me"{% endif %}>
+    <span class="contact-label">{{ item.label }}</span>
+    <span class="contact-url">{{ item.url | display_url }}</span>
+    {%- if url is not mailto %}<span class="visually-hidden"> (external link)</span>{% endif -%}
+  </a>
+{%- endmacro %}
+
 {% block content %}
-<header class="site-header">
-  <div class="container profile" aria-labelledby="profile-name">
-    <p class="eyebrow">Resume</p>
-    <h1 id="profile-name">{{ resume.profile.name }}</h1>
+{% if source == "fallback" %}
+<p class="status-note" role="status">
+  <span class="status-dot" aria-hidden="true"></span>
+  Showing a saved copy of this page. Some details may be out of date.
+</p>
+{% endif %}
+
+<header class="masthead">
+  <div class="container">
+    <h1>{{ resume.profile.name }}</h1>
     <p class="headline">{{ resume.profile.headline }}</p>
     <p class="summary">{{ resume.profile.summary }}</p>
+    <div class="masthead-actions">
+      {% if resume.contact_links %}
+      <ul class="contact-row" aria-label="Contact links">
+        {% for item in resume.contact_links %}
+        <li>{{ contact_link(item, "contact-chip") }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <button class="print-button" type="button" data-print hidden>
+        <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"><path d="M8 2v8m0 0 3.5-3.5M8 10 4.5 6.5M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Save as PDF
+      </button>
+    </div>
   </div>
 </header>
 
 <main id="main-content" class="container">
-  <section id="experience" class="resume-section" aria-labelledby="experience-heading">
+  {% if resume.experience %}
+  <section id="experience" class="sheet-section" aria-labelledby="experience-heading">
     <h2 id="experience-heading">Experience</h2>
-    {% if resume.experience %}
     <ol class="entry-list">
       {% for item in resume.experience %}
+      {% set span = item.start_date | resume_duration(item.end_date) %}
       <li class="entry">
-        <div class="entry-heading">
-          <h3>{{ item.title }}</h3>
-          <p class="entry-meta">{{ item.employer }} · {{ item.start_date or "" }}{% if item.end_date %} – {{ item.end_date }}{% else %} – Present{% endif %}</p>
-        </div>
-        <p>{{ item.summary }}</p>
+        <h3>{{ item.title }}</h3>
+        <p class="entry-org">{{ item.employer }}</p>
+        <p class="entry-when">
+          <span class="entry-dates">{{ date_range(item.start_date, item.end_date, "Present") }}</span>
+          {% if span %}<span class="entry-span">{{ span }}</span>{% endif %}
+        </p>
+        <p class="entry-summary">{{ item.summary }}</p>
       </li>
       {% endfor %}
     </ol>
-    {% else %}<p class="muted">No experience listed.</p>{% endif %}
   </section>
+  {% endif %}
 
-  <section id="education" class="resume-section" aria-labelledby="education-heading">
-    <h2 id="education-heading">Education</h2>
-    {% if resume.education %}
-    <ul class="entry-list">
-      {% for item in resume.education %}
-      <li class="entry">
-        <div class="entry-heading">
-          <h3>{{ item.degree }}</h3>
-          <p class="entry-meta">{{ item.institution }} · {{ item.start_date or "" }}{% if item.end_date %} – {{ item.end_date }}{% endif %}</p>
-        </div>
-        <p>{{ item.summary }}</p>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}<p class="muted">No education listed.</p>{% endif %}
-  </section>
-
-  <section id="skills" class="resume-section" aria-labelledby="skills-heading">
+  {% if resume.skills %}
+  <section id="skills" class="sheet-section" aria-labelledby="skills-heading">
     <h2 id="skills-heading">Skills</h2>
-    {% if resume.skills %}
-    <ul class="tag-list">
+    <ul class="skill-list">
       {% for item in resume.skills %}
-      <li>{{ item.name }}{% if item.level %}<span class="skill-level"> — {{ item.level }}</span>{% endif %}</li>
+      <li>{{ item.name }}</li>
       {% endfor %}
     </ul>
-    {% else %}<p class="muted">No skills listed.</p>{% endif %}
   </section>
+  {% endif %}
 
-  <section id="certifications" class="resume-section" aria-labelledby="certifications-heading">
-    <h2 id="certifications-heading">Certifications</h2>
-    {% if resume.certifications %}
-    <ul class="entry-list">
-      {% for item in resume.certifications %}
-      <li class="entry">
-        <div class="entry-heading">
-          <h3>{{ item.name }}</h3>
-          <p class="entry-meta">{{ item.issuer }}{% if item.start_date %} · {{ item.start_date }}{% endif %}{% if item.end_date %} – {{ item.end_date }}{% endif %}</p>
-        </div>
-        <p>{{ item.summary }}</p>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}<p class="muted">No certifications listed.</p>{% endif %}
+  {% if resume.education or resume.certifications %}
+  <section id="credentials" class="sheet-section" aria-labelledby="credentials-heading">
+    <h2 id="credentials-heading">Credentials</h2>
+    <div class="credential-groups">
+      {% if resume.education %}
+      <div class="credential-group">
+        <h3 class="group-heading">Education</h3>
+        <ul class="credential-list">
+          {% for item in resume.education %}
+          <li class="credential">
+            <h4>{{ item.degree }}</h4>
+            <p class="entry-org">{{ item.institution }}</p>
+            {% if item.start_date or item.end_date %}<p class="entry-dates">{{ date_range(item.start_date, item.end_date) }}</p>{% endif %}
+            <p class="entry-summary">{{ item.summary }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if resume.certifications %}
+      <div class="credential-group">
+        <h3 class="group-heading">Certifications</h3>
+        <ul class="credential-list">
+          {% for item in resume.certifications %}
+          <li class="credential">
+            <h4>{{ item.name }}</h4>
+            <p class="entry-org">{{ item.issuer }}</p>
+            {% if item.start_date or item.end_date %}<p class="entry-dates">{{ date_range(item.start_date, item.end_date) }}</p>{% endif %}
+            <p class="entry-summary">{{ item.summary }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
   </section>
+  {% endif %}
 
-  <section id="contact" class="resume-section contact" aria-labelledby="contact-heading">
-    <h2 id="contact-heading">Contact</h2>
-    {% if resume.contact_links %}
+  {% if resume.contact_links %}
+  <section id="contact" class="sheet-section contact" aria-labelledby="contact-heading">
+    <h2 id="contact-heading">Get in touch</h2>
     <ul class="contact-list">
       {% for item in resume.contact_links %}
-      <li><a href="{{ item.url }}" rel="me">{{ item.label }}<span class="visually-hidden"> (external link)</span></a></li>
+      <li>{{ contact_link(item, "contact-line") }}</li>
       {% endfor %}
     </ul>
-    {% else %}<p class="muted">Contact links are not currently available.</p>{% endif %}
   </section>
+  {% endif %}
 </main>
+
+<script>
+  document.querySelectorAll("[data-print]").forEach((button) => {
+    button.hidden = false;
+    button.addEventListener("click", () => window.print());
+  });
+</script>
 {% endblock %}
