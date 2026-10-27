@@ -24,3 +24,11 @@ def test_footer_links_to_privacy_page_from_every_page(app_client):
         html = app_client.get(path).text
         assert '<footer class="site-footer">' in html
         assert 'href="http://testserver/privacy"' in html
+
+
+def test_privacy_page_names_the_current_host_and_cloudflare_redirect(app_client):
+    html = app_client.get("/privacy").text
+
+    assert "<strong>Railway</strong> hosts the site" in html
+    assert "Microsoft Azure" not in html
+    assert "www.kenwinsor.xyz" in html
