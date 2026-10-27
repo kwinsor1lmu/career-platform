@@ -2,9 +2,7 @@
 
 - Repository: https://github.com/kwinsor1lmu/career-platform
 - Live site: https://kenwinsor.xyz/
-- Final commit SHA: `________` (fill in from `git rev-parse HEAD` after the last evidence commit; the same SHA goes in Brightspace)
-
-Items marked **Unverified** in the linked files still need evidence.
+- Final commit SHA: [`6d4a633b5bbdc11fb5fce17a3c8195fc03baa3dd`](https://github.com/kwinsor1lmu/career-platform/commit/6d4a633b5bbdc11fb5fce17a3c8195fc03baa3dd) (submitted in Brightspace). The only later commit records this SHA here.
 
 ## 1. README, spec, and plans
 

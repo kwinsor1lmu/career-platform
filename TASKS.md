@@ -78,4 +78,4 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 - [x] Submission index with all required links
 - [x] Agent-written docs labeled as agent-assisted and retrospective
 - [x] Stray task reports moved to `docs/superpowers/reports/`
-- [ ] Final commit SHA in the submission index, then submit on Brightspace
+- [x] Final commit SHA in the submission index (6d4a633); submit on Brightspace
