@@ -221,7 +221,7 @@ The GA4 tag (`G-RDD033RLK7`) loads only after the visitor clicks **Accept** on t
 
 **Why the click matters:** the outbound links are my GitHub profile and this project's repository, so a click shows that a visitor went past the resume to look at my work.
 
-Evidence: the Realtime screenshot in [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics) shows the test visit arriving. The `page_view` and `click` event parameters were **not yet captured** (see [Limitations](#limitations)).
+Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 2026-10-26, a Realtime screenshot on the live Railway site shows `page_view`, `session_start`, and `click` (1 each) after I accepted the banner and followed an outside link. The click's `link_url`/`outbound` parameters weren't captured.
 
 ## Decisions
 
@@ -252,7 +252,7 @@ Evidence: the Realtime screenshot in [docs/evidence/ex06.md](docs/evidence/ex06.
 
 - **Azure restart evidence is missing.** systemd is set to start the app at boot ([operate-the-vm plan](docs/superpowers/plans/2026-10-01-operate-the-vm.md), Section 1 results), but no dated `sudo reboot` test has been recorded. **Unverified.**
 - **Email authentication results aren't recorded.** The `spf=`/`dkim=`/`dmarc=` results from a received message's headers, the before-MX test, and confirmation that the reply arrived in the outside mailbox are still missing from [ex06.md](docs/evidence/ex06.md).
-- **GA4 event details aren't captured.** Only the Realtime overview screenshot exists, not the `page_view` and `click` parameters.
+- **GA4 click parameters aren't captured.** Realtime shows the `click` event, but not its `link_url` and `outbound` values.
 - **No row-level database comparison.** The public Postgres credentials in my local `.env` no longer work, so I can't query Railway Postgres from my laptop. Source and target were compared through the rendered page instead.
 - **The PostgreSQL migration for `projects` was only checked by the Railway deploy itself.** There's no local PostgreSQL; locally it was tested on SQLite (upgrade, ingest, downgrade, upgrade).
 - **The page needs the database to list projects**, by design. During an outage only the profile snapshot shows, with a 503.
