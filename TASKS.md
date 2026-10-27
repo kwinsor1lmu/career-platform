@@ -58,7 +58,7 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 - [x] SPF/DKIM/DMARC results: all pass (2026-10-26)
 - [x] Records documented: README → DNS records
 - [ ] Test before MX was published: write what happened in ex06.md
-- [ ] Outbound arrival: confirm Tests 02 and 04 and the reply arrived in the school mailbox
+- [x] Outbound arrival: Tests 02 and 04 and the reply arrived in the school mailbox (checked 2026-10-26)
 - [x] Re-send after DNS returned: authentication check sent and verified on 2026-10-26
 
 ## 7. GA4 analytics
@@ -73,7 +73,8 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 
 - [x] README written, with all required sections
 - [ ] Reflection in my own words (README has draft points)
-- [ ] Costs: Railway trial end date, Azure credit remaining, domain price
+- [x] Costs: Railway trial ends about 2026-11-07 ($4.22 left), domain $2, Azure $10.52 spent
+- [ ] Azure credit remaining (optional; not available from the CLI)
 - [x] Submission index with all required links
 - [x] Agent-written docs labeled as agent-assisted and retrospective
 - [x] Stray task reports moved to `docs/superpowers/reports/`
