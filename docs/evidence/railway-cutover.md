@@ -126,6 +126,6 @@ The reviewed change for requirement 5: **projects read from the database, with a
    ```
    The project only exists in Postgres after the 0002 migration and the ingest, so seeing it live shows the deploy migrated and loaded Railway Postgres.
 
-**Kenneth, to add:** a screenshot of Railway → Deployments showing commit `bdd262c` as Active. **Unverified** until it's added.
+**Railway's record of the deployment** (web service → Deployments → details, copied 2026-10-26): deployment `aea83689`, created **2026-10-26 22:04 PDT** (Railway's clock), domain `kenwinsor.xyz`, "Deployment successful". It now shows **Removed** because later pushes replaced it. Its variables were `GA_MEASUREMENT_ID=G-RDD033RLK7` and `DATABASE_URL=${{<Postgres service>.DATABASE_URL}}`. The push of `bdd262c` was at 21:57:16 on my laptop clock, which was about 7 minutes slow, so about 22:04 real time. That matches this deployment. The copied details don't show the commit ID; that link comes from the timing.
 
 **Recovery:** see [Roll back a bad change](../../README.md#roll-back-a-bad-change). For this change: redeploy the `000bc92` deployment in Railway. The extra `projects` table doesn't affect the older code.

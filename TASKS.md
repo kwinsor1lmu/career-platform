@@ -46,7 +46,7 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 
 ## 5. Verified website update
 
-- [ ] Railway deploy evidence: screenshot of Deployments showing `bdd262c` Active, still to add
+- [x] Railway deploy evidence: deployment `aea83689`, 22:04 PDT, matched to `bdd262c` by push time (railway-cutover.md)
 - [x] Reviewed and locally tested change: bdd262c (59 tests passing)
 - [ ] Commit SHA visible on the live site: not added; the SHA is linked through the push and live checks instead
 - [x] Restore procedure covering the database: README
@@ -57,7 +57,7 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 - [x] Header check file: docs/evidence/zoho-header-check.md
 - [x] SPF/DKIM/DMARC results: all pass (2026-10-26)
 - [x] Records documented: README → DNS records
-- [ ] Test before MX was published: write what happened in ex06.md
+- [x] Test before MX was published: bounced back to the school inbox (ex06.md)
 - [x] Outbound arrival: Tests 02 and 04 and the reply arrived in the school mailbox (checked 2026-10-26)
 - [x] Re-send after DNS returned: authentication check sent and verified on 2026-10-26
 

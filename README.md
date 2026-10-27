@@ -213,7 +213,7 @@ What's still my job on Railway: the code and its dependencies (keep `uv.lock` pa
 - **DKIM:** Zoho signs each outgoing message, and receivers check the signature against the public key at `zmail._domainkey.kenwinsor.xyz`.
 - **DMARC** (`p=none`) asks receivers to check that SPF or DKIM passes *and* matches the From domain, and to send reports to me, without rejecting anything yet.
 
-**Status:** inbound delivery verified Oct 13. On 2026-10-26 an outside verifier reported **SPF pass, DKIM pass (`d=kenwinsor.xyz`), and DMARC pass** for a message from `ken@kenwinsor.xyz` ([zoho-header-check.md](docs/evidence/zoho-header-check.md)). The reply and outbound tests arrived in the school mailbox (checked 2026-10-26). Still to record: the before-MX test.
+**Status:** inbound delivery verified Oct 13. On 2026-10-26 an outside verifier reported **SPF pass, DKIM pass (`d=kenwinsor.xyz`), and DMARC pass** for a message from `ken@kenwinsor.xyz` ([zoho-header-check.md](docs/evidence/zoho-header-check.md)). The reply and outbound tests arrived in the school mailbox (checked 2026-10-26). A message sent before MX existed bounced back to the sender ([ex06.md](docs/evidence/ex06.md)).
 
 ## Analytics (GA4)
 
@@ -250,7 +250,6 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 
 ## Limitations
 
-- **Email:** the before-MX test result is still to be added to [ex06.md](docs/evidence/ex06.md).
 - **GA4 parameter values aren't shown.** The screenshots show that the `click` event had `link_url` and `outbound` parameters, but not their values.
 - **No row-level database comparison.** The public Postgres credentials in my local `.env` no longer work, so I can't query Railway Postgres from my laptop. Source and target were compared through the rendered page instead.
 - **The PostgreSQL migration for `projects` was only checked by the Railway deploy itself.** There's no local PostgreSQL; locally it was tested on SQLite (upgrade, ingest, downgrade, upgrade).
