@@ -11,6 +11,7 @@ from app.models import (
     Education,
     Experience,
     Profile,
+    Project,
     Skill,
 )
 from app.schemas import (
@@ -19,6 +20,7 @@ from app.schemas import (
     Education as PublicEducation,
     Experience as PublicExperience,
     Profile as PublicProfile,
+    Project as PublicProject,
     ResumeSource,
     Skill as PublicSkill,
 )
@@ -112,6 +114,18 @@ def _to_contact_link_model(row: ContactLink) -> PublicContactLink:
     )
 
 
+def _to_project_model(row: Project) -> PublicProject:
+    return PublicProject(
+        id=row.stable_id,
+        name=row.name,
+        status=row.status,
+        summary=row.summary,
+        url=row.url,
+        order=row.display_order,
+        visibility=row.visibility,
+    )
+
+
 def _ordered_rows(rows, *, order_by: str = "display_order") -> list:
     return sorted(rows, key=lambda row: (getattr(row, order_by), getattr(row, "stable_id", "")))
 
@@ -167,6 +181,18 @@ def get_public_resume(session: Session) -> PublicResume:
     )
 
 
+def get_public_projects(session: Session) -> list[PublicProject]:
+    """Read published projects on every request; projects are never served from the fallback file."""
+    rows = (
+        session.query(Project)
+        .join(Profile, (Project.profile_id == Profile.id) & (Project.owner_id == Profile.owner_id))
+        .filter(Profile.owner_id == DEFAULT_OWNER_ID, Profile.visibility == "published", Project.visibility == "published")
+        .order_by(Project.display_order.asc(), Project.stable_id.asc())
+        .all()
+    )
+    return [_to_project_model(row) for row in rows]
+
+
 def get_owner_resume(session: Session) -> ResumeSource:
     profile_row = (
         session.query(Profile)
@@ -184,4 +210,5 @@ def get_owner_resume(session: Session) -> ResumeSource:
         skills=[_to_skill_model(row) for row in _ordered_rows(session.query(Skill).filter(Skill.profile_id == profile_row.id, Skill.owner_id == DEFAULT_OWNER_ID).all())],
         certifications=[_to_certification_model(row) for row in _ordered_rows(session.query(Certification).filter(Certification.profile_id == profile_row.id, Certification.owner_id == DEFAULT_OWNER_ID).all())],
         contact_links=[_to_contact_link_model(row) for row in _ordered_rows(session.query(ContactLink).filter(ContactLink.profile_id == profile_row.id, ContactLink.owner_id == DEFAULT_OWNER_ID).all())],
+        projects=[_to_project_model(row) for row in _ordered_rows(session.query(Project).filter(Project.profile_id == profile_row.id, Project.owner_id == DEFAULT_OWNER_ID).all())],
     )

@@ -8,7 +8,8 @@ from sqlalchemy.exc import DisconnectionError, InterfaceError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.content.fallback import load_public_fallback
-from app.repositories.resume import PublicResume, get_public_resume
+from app.repositories.resume import PublicResume, get_public_projects, get_public_resume
+from app.schemas import Project
 
 logger = logging.getLogger(__name__)
 DatabaseSource = Literal["database", "fallback"]
@@ -30,3 +31,17 @@ def load_resume_with_fallback(
         if session is not None:
             session.close()
     return load_public_fallback(fallback_path), "fallback"
+
+
+def load_public_projects(session_factory: Callable[[], Session]) -> list[Project] | None:
+    """Return published projects, or None when the database can't be read. There is no fallback copy."""
+    session: Session | None = None
+    try:
+        session = session_factory()
+        return get_public_projects(session)
+    except _DATABASE_AVAILABILITY_ERRORS:
+        logger.exception("Database unavailable; projects temporarily unavailable")
+        return None
+    finally:
+        if session is not None:
+            session.close()

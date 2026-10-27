@@ -39,6 +39,7 @@ class Profile(Base, TimestampMixin):
     skills: Mapped[list["Skill"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     certifications: Mapped[list["Certification"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     contact_links: Mapped[list["ContactLink"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
+    projects: Mapped[list["Project"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint("visibility IN ('draft', 'private', 'published')", name="ck_profiles_visibility"),
@@ -143,4 +144,22 @@ class ContactLink(ContentRecordMixin, Base):
         ForeignKeyConstraint(["profile_id", "owner_id"], ["profiles.id", "profiles.owner_id"], name="fk_contact_links_profile_owner"),
         UniqueConstraint("profile_id", "stable_id", name="uq_contact_links_profile_stable_id"),
         Index("ix_contact_links_profile_order", "profile_id", "display_order", "stable_id"),
+    )
+
+
+class Project(ContentRecordMixin, Base):
+    __tablename__ = "projects"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    profile: Mapped[Profile] = relationship(back_populates="projects")
+
+    __table_args__ = (
+        CheckConstraint("visibility IN ('draft', 'private', 'published')", name="ck_projects_visibility"),
+        ForeignKeyConstraint(["profile_id", "owner_id"], ["profiles.id", "profiles.owner_id"], name="fk_projects_profile_owner"),
+        UniqueConstraint("profile_id", "stable_id", name="uq_projects_profile_stable_id"),
+        Index("ix_projects_profile_order", "profile_id", "display_order", "stable_id"),
     )

@@ -66,6 +66,28 @@
   </section>
   {% endif %}
 
+  <section id="projects" class="sheet-section" aria-labelledby="projects-heading">
+    <h2 id="projects-heading">Projects</h2>
+    {% if projects is none %}
+    <p class="status-note" role="status">
+      <span class="status-dot" aria-hidden="true"></span>
+      Projects temporarily unavailable. Please try again in a few minutes.
+    </p>
+    {% elif projects %}
+    <ol class="entry-list">
+      {% for item in projects %}
+      <li class="entry">
+        <h3>{% if item.url %}<a href="{{ item.url }}">{{ item.name }}<span class="visually-hidden"> (external link)</span></a>{% else %}{{ item.name }}{% endif %}</h3>
+        {% if item.status %}<p class="entry-org">{{ item.status }}</p>{% endif %}
+        <p class="entry-summary">{{ item.summary }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="entry-summary">No projects listed yet.</p>
+    {% endif %}
+  </section>
+
   {% if resume.skills %}
   <section id="skills" class="sheet-section" aria-labelledby="skills-heading">
     <h2 id="skills-heading">Skills</h2>

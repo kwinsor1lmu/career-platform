@@ -11,6 +11,7 @@ from app.models import (
     Education,
     Experience,
     Profile,
+    Project,
     Skill,
 )
 from app.schemas import ResumeSource
@@ -23,6 +24,7 @@ _SECTION_MODELS: tuple[tuple[str, type[Any], str], ...] = (
     ("skills", Skill, "skills"),
     ("certifications", Certification, "certifications"),
     ("contact_links", ContactLink, "contact_links"),
+    ("projects", Project, "projects"),
 )
 
 
@@ -100,6 +102,11 @@ def ingest_resume(session: Session, source: ResumeSource, *, commit: bool = True
                 elif model_cls is ContactLink:
                     row.label = item.label
                     row.url = str(item.url)
+                elif model_cls is Project:
+                    row.name = item.name
+                    row.status = item.status
+                    row.summary = item.summary
+                    row.url = str(item.url) if item.url else None
 
                 session.add(row)
 

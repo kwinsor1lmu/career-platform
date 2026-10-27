@@ -10,7 +10,7 @@ def test_initial_schema_contains_resume_sections():
     Base.metadata.create_all(engine)
     tables = set(inspect(engine).get_table_names())
 
-    assert {"profiles", "experiences", "educations", "skills", "certifications", "contact_links"} <= tables
+    assert {"profiles", "experiences", "educations", "skills", "certifications", "contact_links", "projects"} <= tables
 
 
 def test_composite_profile_owner_boundary_is_enforced():

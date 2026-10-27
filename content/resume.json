@@ -48,5 +48,16 @@
       "order": 1,
       "visibility": "published"
     }
+  ],
+  "projects": [
+    {
+      "id": "kenwinsor-xyz",
+      "name": "kenwinsor.xyz — this resume site",
+      "status": "In progress",
+      "summary": "A work-in-progress personal site built for my cloud course. A FastAPI app reads this resume from PostgreSQL on every request. I first deployed it on an Azure Linux VM behind Nginx, then migrated it to Railway, with my own domain on Cloudflare DNS, email through Zoho Mail, and Google Analytics.",
+      "url": "https://github.com/kwinsor1lmu/career-platform",
+      "order": 1,
+      "visibility": "published"
+    }
   ]
 }

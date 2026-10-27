@@ -141,7 +141,7 @@ def main() -> int:
         f"Ingested profile {source.profile.id} from {args.path} and published fallback {fallback_path}: "
         f"{len(source.experience)} experience, {len(source.education)} education, "
         f"{len(source.skills)} skills, {len(source.certifications)} certifications, "
-        f"and {len(source.contact_links)} contact links."
+        f"{len(source.contact_links)} contact links, and {len(source.projects)} projects."
     )
     return 0
 

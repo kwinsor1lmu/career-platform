@@ -51,7 +51,7 @@ def main() -> int:
     print(
         f"Validated {args.path}: profile and {len(source.experience)} experience, "
         f"{len(source.education)} education, {len(source.skills)} skill, "
-        f"{len(source.certifications)} certification, and {len(source.contact_links)} contact link records."
+        f"{len(source.certifications)} certification, {len(source.contact_links)} contact link, and {len(source.projects)} project records."
     )
     return 0
 

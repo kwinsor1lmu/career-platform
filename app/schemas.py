@@ -81,6 +81,16 @@ class ContactLink(StrictModel):
     visibility: Visibility
 
 
+class Project(StrictModel):
+    id: Identifier
+    name: str = Field(min_length=1)
+    status: str | None = None
+    summary: str = Field(min_length=1)
+    url: HttpUrl | None = None
+    order: int = Field(ge=0)
+    visibility: Visibility
+
+
 class ResumeSource(StrictModel):
     profile: Profile
     experience: list[Experience] = Field(default_factory=list)
@@ -88,6 +98,7 @@ class ResumeSource(StrictModel):
     skills: list[Skill] = Field(default_factory=list)
     certifications: list[Certification] = Field(default_factory=list)
     contact_links: list[ContactLink] = Field(default_factory=list)
+    projects: list[Project] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_unique_section_ids(self) -> ResumeSource:
@@ -97,6 +108,7 @@ class ResumeSource(StrictModel):
             "skills",
             "certifications",
             "contact_links",
+            "projects",
         ):
             records = getattr(self, section_name)
             ids = [record.id for record in records]

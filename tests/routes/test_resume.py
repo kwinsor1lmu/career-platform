@@ -77,6 +77,7 @@ def _get(monkeypatch, resume: PublicResume, source: str = "database"):
         "app.routes.resume.load_resume_with_fallback",
         lambda session_factory, fallback_path: (resume, source),
     )
+    monkeypatch.setattr("app.routes.resume.load_public_projects", lambda session_factory: [])
     return TestClient(create_app()).get("/")
 
 

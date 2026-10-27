@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 
 from app.db import SessionLocal
-from app.services.resume import load_resume_with_fallback
+from app.services.resume import load_public_projects, load_resume_with_fallback
 
 router = APIRouter()
 templates = Jinja2Templates(directory=Path(__file__).resolve().parent.parent / "templates")
@@ -69,14 +69,17 @@ templates.env.tests["mailto"] = lambda value: str(value).startswith("mailto:")
 def _render_resume(request: Request):
     settings = request.app.state.settings
     resume, source = load_resume_with_fallback(SessionLocal, settings.fallback_path)
+    projects = load_public_projects(SessionLocal)
     return templates.TemplateResponse(
         request=request,
         name="resume.html",
         context={
             "resume": resume,
             "source": source,
+            "projects": projects,
             "canonical_url": str(request.url_for("resume-home")),
         },
+        status_code=503 if projects is None else 200,
     )
 
 
