@@ -72,7 +72,7 @@ From the repo audit on 2026-10-20 (due Thursday, 2026-10-22, 1:45 PM). **Status 
 ## 8. Engineering record
 
 - [x] README written, with all required sections
-- [ ] Reflection in my own words (README has draft points)
+- [x] Reflection in my own words (README → Reflection)
 - [x] Costs: Railway trial ends about 2026-11-07 ($4.22 left), domain $2, Azure $10.52 spent
 - [ ] Azure credit remaining (optional; not available from the CLI)
 - [x] Submission index with all required links

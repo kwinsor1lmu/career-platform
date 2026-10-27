@@ -260,4 +260,12 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 
 ## Reflection
 
-**Written afterward (2026-10-26). Kenneth: rewrite this in your own words before submitting.** _Draft points to react to:_ how much of "the site is down" happened outside my code. The registrar, DNS caching, and a platform's domain verification each caused a real outage this month, and none of them showed up in my test suite. Moving to Railway took Nginx, certbot, and systemd off my list, but not DNS, secrets, data, or watching deploys. Next time I'd verify the registrant email on day one, record evidence as I go instead of afterward, and confirm the target's TLS works before moving DNS, not after.
+_Written by me on 2026-10-26, after the work._
+
+**What I understand better.** I understand the path from a request to the website much better, and I understand HTTPS and certificates better. I also understand how Railway and Azure work and how they're different, and how to set up email for my site through Zoho.
+
+**What went wrong or surprised me.** Namecheap suspended my domain, and it took me a while to figure out why my site wasn't running because I didn't expect it, especially since it was suspended at the same time Railway went down. Railway also got stuck on a certificate that I spent a while trying to fix, when all I had to do in the end was delete the domain name and type it in again.
+
+**What I'd do differently.** I know now that I should verify my accounts right away, even if they don't directly ask me to, and I would be more diligent in the VM migration.
+
+**What the AI agent did and what I did.** The AI agent did all the technical work that I asked of it, and recommended fixes and pointed out possible issues when I was stuck. I checked it all and was ultimately the one to make the final decisions, as well as guiding the AI to help me as best it could.
