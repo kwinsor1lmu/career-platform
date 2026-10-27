@@ -27,7 +27,7 @@ Items marked **Unverified** in the linked files still need evidence.
 ## 4. Azure HTTP/restart evidence and final DNS/HTTPS
 
 - Azure build and migration: [ex03.md](evidence/ex03.md) · [Azure migration plan results](superpowers/plans/2026-09-24-azure-vm-migration.md)
-- systemd, Nginx, and firewall setup with results: [operate-the-vm plan](superpowers/plans/2026-10-01-operate-the-vm.md). The controlled VM restart is **Unverified** (see README → Limitations).
+- systemd, Nginx, and firewall setup with results, plus the reboot, crash, and outside-port checks from 2026-10-26: [operate-the-vm plan → results](superpowers/plans/2026-10-01-operate-the-vm.md#reboot-crash-and-outside-check-results-run-2026-10-26-pdt--2026-10-27-utc-from-the-laptop-over-ssh)
 - HTTPS on the VM (my Exercise 04 explanation): [how-this-site-is-secured.md](how-this-site-is-secured.md)
 - Final DNS records and `www` redirect checks: [README → DNS records](../README.md#dns-records)
 - Final HTTPS on Railway: [railway-cutover.md → HTTPS at the new destination](evidence/railway-cutover.md#https-at-the-new-destination)
@@ -41,7 +41,7 @@ Items marked **Unverified** in the linked files still need evidence.
 ## 6. Zoho email
 
 - Sending, receiving, and replying: [ex06.md](evidence/ex06.md)
-- SPF, DKIM, and DMARC results: [zoho-header-check.md](evidence/zoho-header-check.md) (**Unverified** until filled in)
+- SPF, DKIM, and DMARC results (all pass, 2026-10-26): [zoho-header-check.md](evidence/zoho-header-check.md)
 - Records and explanation: [README → Email](../README.md#email-zoho)
 
 ## 7. GA4

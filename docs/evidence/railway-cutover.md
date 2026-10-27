@@ -1,6 +1,6 @@
 # Railway cutover record
 
-All checks run on 2026-10-26 (PDT) from my laptop with Claude Code, unless a line says otherwise. Commands are shown with their actual results. Written up the same evening, after the work. The plan these steps follow, written beforehand: [2026-10-07-railway-migration.md](../superpowers/plans/2026-10-07-railway-migration.md).
+All checks run on 2026-10-26 (PDT) from my laptop with Claude Code, unless a line says otherwise. **Clock note:** the laptop clock was found to be about 7 minutes slow that night (compared with a web server's `Date` header). Laptop-based times below, including Git's push times, may read about 7 minutes early. Certificate dates and Railway/Zoho timestamps come from the servers. Commands are shown with their actual results. Written up the same evening, after the work. The plan these steps follow, written beforehand: [2026-10-07-railway-migration.md](../superpowers/plans/2026-10-07-railway-migration.md).
 
 ## Before the cutover: domain restored
 

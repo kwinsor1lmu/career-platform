@@ -350,6 +350,26 @@ Steps 2.1, 2.2 and 2.3 are all done, and every check passed. nginx now serves yo
 
 **Left for you:** the crash test (`sudo kill -9` a worker, then the supervisor) and the reboot test (`sudo reboot`, then Step 4.1 again).
 
+### Reboot, crash, and outside-check results (run 2026-10-26 PDT = 2026-10-27 UTC, from the laptop over SSH)
+
+Run by Claude Code at my request, after the domain had moved to Railway. The VM serves the same app as the rollback, so these tests didn't affect the live site. Times are from the VM's clock (UTC), which matched a web server's `Date` header; my laptop clock was about 7 minutes slow that day. The VM had been up since its first boot on 2026-09-24.
+
+| Test | What ran | Expected | Result |
+|---|---|---|---|
+| Before | `curl --resolve kenwinsor.xyz:443:20.88.59.204 https://kenwinsor.xyz/` | `200` | ✅ `200` |
+| Before | `systemctl is-enabled career-platform nginx` | `enabled` ×2 | ✅ `enabled`, `enabled` |
+| Reboot | `sudo systemctl reboot` | VM restarts | ✅ Previous boot's journal ends `05:41:36 systemd-shutdown … Sending SIGTERM to remaining processes`; `who -b` → `system boot 2026-10-27 05:41` |
+| After reboot | `journalctl -b -u nginx`, `journalctl -b -u career-platform` | Both start on their own | ✅ `05:41:49 Started career-platform.service`, `05:41:50 Started nginx.service`, workers 839 and 840 `Started server process` at 05:41:54. No manual steps |
+| After reboot | `systemctl is-active career-platform nginx` | `active` ×2 | ✅ `active`, `active` |
+| After reboot | `ss -ltn` | 80/443 public, 8000 on localhost only | ✅ `0.0.0.0:80`, `0.0.0.0:443`, `127.0.0.1:8000` |
+| After reboot | `curl http://127.0.0.1:8000/health` on the VM; `https://kenwinsor.xyz/` and `/health` via `--resolve` to the VM | `{"status":"ok"}`, `200`, name from the database | ✅ `{"status":"ok"}`, `200`, `Kenneth Winsor` ×5 |
+| Worker crash | `sudo kill -9 840` (one worker) at 05:42:44 | The supervisor replaces it; the site keeps answering | ✅ Journal: `Child process [840] died`, then `Started server process [1323]` at 05:42:45. Workers went from `837 839 840` to `837 839 1323`. Page `200` |
+| Supervisor crash | `sudo kill -9 677` (uvicorn's main process) at 05:42:47 | systemd restarts the service | ✅ `Main process exited, code=killed, status=9/KILL`, then `Scheduled restart job, restart counter is at 1` and `Started career-platform.service` at 05:42:49. New MainPID 1339, `NRestarts=1`, page `200` |
+| Process users | `ps -o user,args -C nginx,uvicorn,python3` | App not root | ✅ App (PID 1339) runs as `azureuser`; nginx workers as `www-data`. Root: nginx master and the Azure agent (`waagent`) only |
+| Outside: port 80 | `curl -H "Host: kenwinsor.xyz" http://20.88.59.204/` | Redirect to HTTPS | ✅ `301` → `https://kenwinsor.xyz/` |
+| Outside: port 8000 | `curl -m 8 http://20.88.59.204:8000/` | Blocked by the NSG | ✅ No response (`000`, timed out) |
+| Outside: SSH | From the home IP `68.228.92.204` (allowed) | Connects | ✅ Connected. Testing a non-allowed IP wasn't possible from here; the NSG rule allows only the school and home /32s |
+
 ---
 
 ## Day-to-day commands (VM)

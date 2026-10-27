@@ -213,7 +213,7 @@ What's still my job on Railway: the code and its dependencies (keep `uv.lock` pa
 - **DKIM:** Zoho signs each outgoing message, and receivers check the signature against the public key at `zmail._domainkey.kenwinsor.xyz`.
 - **DMARC** (`p=none`) asks receivers to check that SPF or DKIM passes *and* matches the From domain, and to send reports to me, without rejecting anything yet.
 
-**Status:** inbound delivery was verified on Oct 13. The SPF/DKIM/DMARC header results and the before-MX test are **not yet recorded** (see [Limitations](#limitations)).
+**Status:** inbound delivery verified Oct 13. On 2026-10-26 an outside verifier reported **SPF pass, DKIM pass (`d=kenwinsor.xyz`), and DMARC pass** for a message from `ken@kenwinsor.xyz` ([zoho-header-check.md](docs/evidence/zoho-header-check.md)). Still to record: the before-MX test, and confirming the reply arrived in the school mailbox.
 
 ## Analytics (GA4)
 
@@ -241,7 +241,7 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 
 | Service | What it's for | Cost | Expires / renews | Cleanup plan |
 |---|---|---|---|---|
-| Azure for Students | VM `Standard_B2ats_v2`, disk, public IP, NSG (`rg-career-platform`) | Student credit. **Unverified:** credit remaining | **Unverified:** credit end date | Keep running until the instructor says otherwise, then delete the resource group |
+| Azure for Students | VM `Standard_B2ats_v2`, disk, public IP, NSG (`rg-career-platform`) | Paid from student credit. Actual cost Sep 1 – Oct 26, 2026 (Cost Management API, queried 2026-10-26): **$10.52**, made up of public IP (billed as Virtual Network) $7.67, disk storage $2.85, VM compute $0.00, bandwidth <$0.01. The public IP and disk keep charging while the VM exists. **Unverified:** credit remaining | **Unverified:** credit end date | Keep running until the instructor says otherwise, then delete the resource group |
 | Railway trial | Web service + Postgres | Trial credit: $5 or 30 days, whichever comes first | **Unverified, fill in from Railway → Usage.** The trial started around Oct 7–8, so roughly Nov 6–7 | Migrate to AWS before it ends, then delete the project |
 | Namecheap | `kenwinsor.xyz` registration | **Unverified:** amount paid | Registered 2026-10-01, expires 2027-10-01 | Turn off auto-renew if I stop using the domain |
 | Cloudflare | DNS, `www` redirect | Free plan | — | — |
@@ -250,8 +250,7 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 
 ## Limitations
 
-- **Azure restart evidence is missing.** systemd is set to start the app at boot ([operate-the-vm plan](docs/superpowers/plans/2026-10-01-operate-the-vm.md), Section 1 results), but no dated `sudo reboot` test has been recorded. **Unverified.**
-- **Email authentication results aren't recorded.** The `spf=`/`dkim=`/`dmarc=` results from a received message's headers, the before-MX test, and confirmation that the reply arrived in the outside mailbox are still missing from [ex06.md](docs/evidence/ex06.md).
+- **Email:** the before-MX test result and arrival in the school mailbox are still to be added to [ex06.md](docs/evidence/ex06.md).
 - **GA4 parameter values aren't shown.** The screenshots show that the `click` event had `link_url` and `outbound` parameters, but not their values.
 - **No row-level database comparison.** The public Postgres credentials in my local `.env` no longer work, so I can't query Railway Postgres from my laptop. Source and target were compared through the rendered page instead.
 - **The PostgreSQL migration for `projects` was only checked by the Railway deploy itself.** There's no local PostgreSQL; locally it was tested on SQLite (upgrade, ingest, downgrade, upgrade).
