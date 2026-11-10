@@ -6,7 +6,7 @@ My personal resume site, live at **https://kenwinsor.xyz/**. It is also the star
 
 Submission index: [docs/project-1-submission.md](docs/project-1-submission.md)
 
-> **Status, 2026-11-10.** The Railway trial ended and `kenwinsor.xyz` is down. The site now runs on AWS (EC2 + RDS) and passes every test at **https://aws.kenwinsor.xyz/**. Pointing `kenwinsor.xyz` at AWS is the remaining step; see [Migration to AWS](#migration-to-aws).
+> **Status, 2026-11-10.** `kenwinsor.xyz` runs on AWS (EC2 + RDS) since the cutover at 08:06 UTC on 2026-11-10. The Railway trial had ended, and the site was down from about 2026-11-07 until then. See [Migration to AWS](#migration-to-aws).
 
 ## Contents
 
@@ -86,22 +86,22 @@ The reviewed change used as evidence for requirement 5 is recorded in [docs/evid
 
 ### AWS (EC2 + RDS)
 
-Verified on the test subdomain `aws.kenwinsor.xyz` on 2026-11-10. Dashed lines are unfinished: the apex domain still points at Railway, which no longer serves anything.
+Live since 2026-11-10, after testing on `aws.kenwinsor.xyz`. Railway isn't shown, because it no longer serves anything; its project is still to be deleted.
 
 ```mermaid
 flowchart LR
   B["Visitor's browser"]
   ADMIN["My laptop<br/>SSH key + pg_dump copies"]
   GH["GitHub repo<br/>(server pulls by hand, no auto-deploy)"]
-  CF["Cloudflare DNS<br/>A aws.kenwinsor.xyz → 44.215.219.249<br/>DNS only (grey cloud)"]
-  RW["Railway<br/>trial ended 2026-11-07, serves nothing"]
+  CF["Cloudflare DNS<br/>A kenwinsor.xyz and aws.kenwinsor.xyz<br/>→ 44.215.219.249, DNS only (grey cloud)"]
+  CFR["Cloudflare proxy<br/>www only: 301 redirect rule"]
 
   subgraph AWS["AWS us-east-1"]
     subgraph VPC["Default VPC"]
       EIP["Elastic IP 44.215.219.249"]
       subgraph WSG["web SG: 80, 443 from anywhere · 22 from my 2 IPs only"]
         subgraph EC2["EC2 t3.micro · Ubuntu 26.04 · IMDSv2 required"]
-          NG["Nginx :80 → 301 to HTTPS<br/>:443 TLS ends here<br/>(Let's Encrypt via certbot)"]
+          NG["Nginx :80 → 301 to HTTPS<br/>:443 TLS ends here<br/>(Let's Encrypt via certbot,<br/>one cert per hostname)"]
           UV["uvicorn 127.0.0.1:8000<br/>2 workers · systemd"]
         end
       end
@@ -120,7 +120,8 @@ flowchart LR
   ADMIN -- "SSH TCP/22: the only admin path" --> EIP
   ADMIN -. "pg_dump, run on the server" .-> RDS
   GH -- "git pull during an SSH session" --> UV
-  CF -. "kenwinsor.xyz still CNAME to Railway<br/>(cutover pending)" .-> RW
+  B == "HTTPS www.kenwinsor.xyz" ==> CFR
+  CFR -- "301 → https://kenwinsor.xyz/" --> B
 ```
 
 ### Railway (2026-10-26 to 2026-11-07, trial ended)
@@ -189,7 +190,8 @@ Cloudflare is the authoritative DNS provider. Nameservers at the registry: `brit
 
 | Name | Type | Value | Proxy | Purpose |
 |---|---|---|---|---|
-| `kenwinsor.xyz` | CNAME (flattened) | `0z13fs8z.up.railway.app` | DNS only | Site on Railway |
+| `kenwinsor.xyz` | A | `44.215.219.249` | DNS only | Site on AWS EC2 (Elastic IP), since 2026-11-10. Was a CNAME to `0z13fs8z.up.railway.app` |
+| `aws` | A | `44.215.219.249` | DNS only | Test subdomain for the AWS move |
 | `_railway-verify` | TXT | `railway-verify=b43f…3b88` | — | Proves to Railway that I control the domain |
 | `www` | A | `192.0.2.1` (placeholder) | Proxied | Lets Cloudflare answer the `www` → apex redirect rule |
 | `kenwinsor.xyz` | MX | `mx.zoho.com` (10), `mx2.zoho.com` (20), `mx3.zoho.com` (50) | — | Incoming mail goes to Zoho |
@@ -217,6 +219,7 @@ On the Azure VM, both `@` and `www` were `A 20.88.59.204`, DNS only.
 
 - **Azure VM:** my own explanation (Exercise 04) is in [docs/how-this-site-is-secured.md](docs/how-this-site-is-secured.md). It covers the Let's Encrypt certificate for `kenwinsor.xyz` and `www.kenwinsor.xyz` (valid Oct 6, 2026 – Jan 4, 2027), certbot's renewal timer, and the open ports.
 - **Railway:** Railway requests and renews a Let's Encrypt certificate for `kenwinsor.xyz` itself, once its TXT check passes and the CNAME points at it. On 2026-10-26, `openssl s_client` showed `subject=CN=kenwinsor.xyz`, issued by Let's Encrypt; the full output is in [docs/evidence/railway-cutover.md](docs/evidence/railway-cutover.md#https-at-the-new-destination). I don't manage renewal on Railway. I only have to keep the DNS records in place.
+- **AWS (since 2026-11-10):** certbot on the EC2 server issued Let's Encrypt certificates for `kenwinsor.xyz` and `aws.kenwinsor.xyz` (both valid to 2027-02-08). Nginx ends TLS and redirects HTTP to HTTPS; `certbot.timer` renews them, and a `certbot renew --dry-run` passed.
 - **`www`:** Cloudflare presents its own edge certificate for `www.kenwinsor.xyz` and answers with the redirect. TLS for `www` ends at Cloudflare.
 
 ## Migration to AWS
@@ -231,14 +234,14 @@ Course guide: ISBA 4775 AWS migration (sessions 17–18). Plan, written before t
 - To restore: `pg_restore --no-owner -d career_platform <dump>` as `career_app` on the server, or restore an RDS snapshot to a new instance and change `DATABASE_URL` in `/etc/career-platform.env`. In either case the boot-time ingest re-syncs content from `content/resume.json`.
 - Targets: RPO effectively zero for committed content, since the database is rebuilt from Git on every start. RTO 30 minutes.
 
-**What I tested on `aws.kenwinsor.xyz`, and what passed.** Pages, static files, 404, HTTPS and the HTTP→HTTPS redirect, certificate renewal (dry run), a test record that survived two restarts and a reboot, RDS not reachable from the internet, port 8000 closed, SSH only from my IPs, and IMDSv2 required. All passed. Analytics wasn't tested, because the measurement ID is left empty on the test copy. Table with evidence: [docs/evidence/ex07.md](docs/evidence/ex07.md#3-verification-on-awskenwinsorxyz).
+**What I tested on `aws.kenwinsor.xyz`, and what passed.** After the cutover I repeated the page, static file, 404, HTTPS, redirect, and analytics checks on `kenwinsor.xyz`; all passed, and MX records were unchanged. Before it: Pages, static files, 404, HTTPS and the HTTP→HTTPS redirect, certificate renewal (dry run), a test record that survived two restarts and a reboot, RDS not reachable from the internet, port 8000 closed, SSH only from my IPs, and IMDSv2 required. All passed. Analytics wasn't tested, because the measurement ID is left empty on the test copy. Table with evidence: [docs/evidence/ex07.md](docs/evidence/ex07.md#3-verification-on-awskenwinsorxyz).
 
 **What it costs.** About **$26.82/month** on-demand in us-east-1: EC2 $7.59, EBS $1.60, public IPv4 $3.65, RDS $11.68, RDS storage $2.30. It's paid from the AWS Free plan's credits, so actual charges are $0 until they run out.
 
 **What's next.**
-1. Cutover: remove the test skill, point `kenwinsor.xyz` at the Elastic IP (DNS only), get its certificate, and set the GA measurement ID.
+1. ~~Cutover~~ done 2026-11-10.
 2. Merge `aws-migration` into `main` and run `main` on the server. Then delete the Railway project and its `_railway-verify` record.
-3. Copy the backups to storage that isn't this laptop, and take a fresh dump from RDS after cutover.
+3. Copy the backups (including the post-cutover RDS dump) to storage that isn't this laptop.
 4. Before the Free plan ends: decide whether to keep paying (about $27/month) or move back to a single server. Teardown order is in the plan: RDS snapshot, then delete RDS, terminate EC2, release the Elastic IP, delete the security groups and key.
 
 ## Migration to Railway and PostgreSQL
@@ -321,7 +324,7 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 - **The page needs the database to list projects**, by design. During an outage only the profile snapshot shows, with a 503.
 - **Database edits are overwritten on deploy**, because the content file is the source of truth.
 - **Single region, single instance, Single-AZ database.** An outage in that one AZ takes the site down.
-- **`kenwinsor.xyz` is down until cutover.** The Railway trial ended before the AWS copy went live.
+- **The site was down for about 3 days** (2026-11-07 to 11-10), because the Railway trial ended before the AWS copy went live.
 - **RDS backups are kept for 1 day only** (Free plan limit), so the `pg_dump` copies are the longer-term backup.
 - **No automatic deploys on AWS.** Updating the site means SSH, `git pull`, and `systemctl restart career-platform`.
 - **The Railway database password was pasted into a chat session** on 2026-10-26. Rotating it is planned.

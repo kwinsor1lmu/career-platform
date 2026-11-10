@@ -155,3 +155,16 @@ Railway is down (trial ended), so the comparison baseline is the restored data a
 | Automated backups | Retention 1 day (Free plan limit, deviation); latest restorable 2026-11-10 07:10 UTC | Pass (with deviation) |
 | Analytics | `GA_MEASUREMENT_ID` empty on the test copy on purpose | Not verified (set at cutover) |
 | Independent backup copy | Dumps only on the laptop | Not verified (user to copy) |
+
+## Task 8: cutover (2026-11-10)
+
+Approved by the user ("approved, cut over").
+
+- Test skill reverted (`957f5fc`, revert of `dd6e272`), deployed to the server from a git bundle; page no longer shows it, RDS `skills` = 8.
+- New nginx site `kenwinsor` for `kenwinsor.xyz` → `127.0.0.1:8000`; `nginx -t` ok. `GA_MEASUREMENT_ID=G-RDD033RLK7` in `/etc/career-platform.env`, service restarted, tag on the page.
+- **Saved apex record before the change:** `CNAME kenwinsor.xyz → 0z13fs8z.up.railway.app`, DNS only, TTL auto (Railway is dead, so this is for the record only; rollback target would be the Azure VM or this server).
+- 08:06 UTC: user ran `cf dns records update` on the apex record → `A 44.215.219.249`, DNS only. Zone diff: 1 changed, 10 unchanged. 1.1.1.1 and 8.8.8.8 both answer 44.215.219.249.
+- `certbot --nginx -d kenwinsor.xyz --redirect` → certificate valid to 2027-02-08 (issuer Let's Encrypt YE2). `http://kenwinsor.xyz/` → 301 to HTTPS; `https://www.kenwinsor.xyz/privacy` → 301 to `https://kenwinsor.xyz/privacy` (Cloudflare rule).
+- Live checks on `https://kenwinsor.xyz`: `/` 200, `/privacy` 200, `/health` 200, `/static/styles.css` 200, font 200 (22,588 B), `/nope-404` 404; GA tag present; MX still Zoho.
+- Post-cutover backup: `pg_dump -Fc` from RDS as `career_app`, `C:\Users\kenne\Backups\career-platform\rds-20261110-080723.dump`, SHA-256 `d86a7f55eb1d1dfefdc312899e2ff5626d67301bd21897a4fefe971c3ca44470` (same on server and laptop; server copy shredded). Table hashes identical to the 2026-11-03 Railway backup for all 8 tables.
+- Left: delete the Railway project and the `_railway-verify` TXT record; copy backups to independent storage; Railway rollback no longer exists.
