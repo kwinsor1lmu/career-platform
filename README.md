@@ -6,6 +6,8 @@ My personal resume site, live at **https://kenwinsor.xyz/**. It is also the star
 
 Submission index: [docs/project-1-submission.md](docs/project-1-submission.md)
 
+> **Status, 2026-11-10.** The Railway trial ended and `kenwinsor.xyz` is down. The site now runs on AWS (EC2 + RDS) and passes every test at **https://aws.kenwinsor.xyz/**. Pointing `kenwinsor.xyz` at AWS is the remaining step; see [Migration to AWS](#migration-to-aws).
+
 ## Contents
 
 1. [What the site does](#what-the-site-does)
@@ -15,15 +17,16 @@ Submission index: [docs/project-1-submission.md](docs/project-1-submission.md)
 5. [Architecture](#architecture)
 6. [DNS records](#dns-records)
 7. [HTTPS certificates](#https-certificates)
-8. [Migration to Railway and PostgreSQL](#migration-to-railway-and-postgresql)
-9. [Who manages what: Azure vs Railway](#who-manages-what-azure-vs-railway)
-10. [Email (Zoho)](#email-zoho)
-11. [Analytics (GA4)](#analytics-ga4)
-12. [Decisions](#decisions)
-13. [Investigated failures](#investigated-failures)
-14. [Costs, expiration dates, and cleanup](#costs-expiration-dates-and-cleanup)
-15. [Limitations](#limitations)
-16. [Reflection](#reflection)
+8. [Migration to AWS](#migration-to-aws)
+9. [Migration to Railway and PostgreSQL](#migration-to-railway-and-postgresql)
+10. [Who manages what: Azure vs Railway](#who-manages-what-azure-vs-railway)
+11. [Email (Zoho)](#email-zoho)
+12. [Analytics (GA4)](#analytics-ga4)
+13. [Decisions](#decisions)
+14. [Investigated failures](#investigated-failures)
+15. [Costs, expiration dates, and cleanup](#costs-expiration-dates-and-cleanup)
+16. [Limitations](#limitations)
+17. [Reflection](#reflection)
 
 ## What the site does
 
@@ -81,7 +84,46 @@ The reviewed change used as evidence for requirement 5 is recorded in [docs/evid
 
 ## Architecture
 
-### Railway (current, since 2026-10-26)
+### AWS (EC2 + RDS)
+
+Verified on the test subdomain `aws.kenwinsor.xyz` on 2026-11-10. Dashed lines are unfinished: the apex domain still points at Railway, which no longer serves anything.
+
+```mermaid
+flowchart LR
+  B["Visitor's browser"]
+  ADMIN["My laptop<br/>SSH key + pg_dump copies"]
+  GH["GitHub repo<br/>(server pulls by hand, no auto-deploy)"]
+  CF["Cloudflare DNS<br/>A aws.kenwinsor.xyz → 44.215.219.249<br/>DNS only (grey cloud)"]
+  RW["Railway<br/>trial ended 2026-11-07, serves nothing"]
+
+  subgraph AWS["AWS us-east-1"]
+    subgraph VPC["Default VPC"]
+      EIP["Elastic IP 44.215.219.249"]
+      subgraph WSG["web SG: 80, 443 from anywhere · 22 from my 2 IPs only"]
+        subgraph EC2["EC2 t3.micro · Ubuntu 26.04 · IMDSv2 required"]
+          NG["Nginx :80 → 301 to HTTPS<br/>:443 TLS ends here<br/>(Let's Encrypt via certbot)"]
+          UV["uvicorn 127.0.0.1:8000<br/>2 workers · systemd"]
+        end
+      end
+      subgraph DSG["db SG: 5432 only from the web SG"]
+        RDS[("RDS PostgreSQL 18.6<br/>db.t4g.micro · Single-AZ<br/>20 GB encrypted · not public")]
+      end
+    end
+    BK[("RDS automated backups<br/>1-day retention")]
+  end
+
+  B -. "DNS lookup" .-> CF
+  B == "HTTPS TCP/443" ==> EIP ==> NG
+  NG -- "HTTP over loopback" --> UV
+  UV -- "Postgres, TLS verify-full<br/>as career_app" --> RDS
+  RDS -- "daily snapshot + logs" --> BK
+  ADMIN -- "SSH TCP/22: the only admin path" --> EIP
+  ADMIN -. "pg_dump, run on the server" .-> RDS
+  GH -- "git pull during an SSH session" --> UV
+  CF -. "kenwinsor.xyz still CNAME to Railway<br/>(cutover pending)" .-> RW
+```
+
+### Railway (2026-10-26 to 2026-11-07, trial ended)
 
 ```mermaid
 flowchart LR
@@ -177,6 +219,28 @@ On the Azure VM, both `@` and `www` were `A 20.88.59.204`, DNS only.
 - **Railway:** Railway requests and renews a Let's Encrypt certificate for `kenwinsor.xyz` itself, once its TXT check passes and the CNAME points at it. On 2026-10-26, `openssl s_client` showed `subject=CN=kenwinsor.xyz`, issued by Let's Encrypt; the full output is in [docs/evidence/railway-cutover.md](docs/evidence/railway-cutover.md#https-at-the-new-destination). I don't manage renewal on Railway. I only have to keep the DNS records in place.
 - **`www`:** Cloudflare presents its own edge certificate for `www.kenwinsor.xyz` and answers with the redirect. TLS for `www` ends at Cloudflare.
 
+## Migration to AWS
+
+Course guide: ISBA 4775 AWS migration (sessions 17–18). Plan, written before the work: [docs/superpowers/plans/2026-11-03-aws-migration.md](docs/superpowers/plans/2026-11-03-aws-migration.md). Full log with every command result and deviation: [docs/aws-migration-notes.md](docs/aws-migration-notes.md). Exercise 07 evidence: [docs/evidence/ex07.md](docs/evidence/ex07.md).
+
+**What I chose and why.** EC2 + Single-AZ RDS PostgreSQL instead of EC2 with PostgreSQL on the same server, because it's the least operating work I can get without changing application code. AWS patches the database and takes its backups. The trade-off is about $13/month more and a database that goes down if its one availability zone does. Lambda was ruled out because the app is a long-running FastAPI server. Details: [docs/aws-migration-decision.md](docs/aws-migration-decision.md).
+
+**Backups and how to restore.**
+- Before the move, on 2026-11-03, I dumped Railway's Postgres with `pg_dump` (custom format). I restored the dump into a scratch local database: it took 0.37 s, and every table matched Railway's row counts and per-table MD5 hashes. The same file restored into RDS in 0.26 s, also matching. Dumps stay outside the repo.
+- RDS takes automated backups with 1-day retention. That's the Free plan limit; I asked for 7 days. RDS also keeps point-in-time recovery inside that window.
+- To restore: `pg_restore --no-owner -d career_platform <dump>` as `career_app` on the server, or restore an RDS snapshot to a new instance and change `DATABASE_URL` in `/etc/career-platform.env`. In either case the boot-time ingest re-syncs content from `content/resume.json`.
+- Targets: RPO effectively zero for committed content, since the database is rebuilt from Git on every start. RTO 30 minutes.
+
+**What I tested on `aws.kenwinsor.xyz`, and what passed.** Pages, static files, 404, HTTPS and the HTTP→HTTPS redirect, certificate renewal (dry run), a test record that survived two restarts and a reboot, RDS not reachable from the internet, port 8000 closed, SSH only from my IPs, and IMDSv2 required. All passed. Analytics wasn't tested, because the measurement ID is left empty on the test copy. Table with evidence: [docs/evidence/ex07.md](docs/evidence/ex07.md#3-verification-on-awskenwinsorxyz).
+
+**What it costs.** About **$26.82/month** on-demand in us-east-1: EC2 $7.59, EBS $1.60, public IPv4 $3.65, RDS $11.68, RDS storage $2.30. It's paid from the AWS Free plan's credits, so actual charges are $0 until they run out.
+
+**What's next.**
+1. Cutover: remove the test skill, point `kenwinsor.xyz` at the Elastic IP (DNS only), get its certificate, and set the GA measurement ID.
+2. Merge `aws-migration` into `main` and run `main` on the server. Then delete the Railway project and its `_railway-verify` record.
+3. Copy the backups to storage that isn't this laptop, and take a fresh dump from RDS after cutover.
+4. Before the Free plan ends: decide whether to keep paying (about $27/month) or move back to a single server. Teardown order is in the plan: RDS snapshot, then delete RDS, terminate EC2, release the Elastic IP, delete the security groups and key.
+
 ## Migration to Railway and PostgreSQL
 
 - **Plan, written before the change:** [docs/superpowers/plans/2026-10-07-railway-migration.md](docs/superpowers/plans/2026-10-07-railway-migration.md). It inventories the code, runtime (Dockerfile, Python 3.12), packages (`uv.lock`), configuration and secrets (`DATABASE_URL` and `ENVIRONMENT` as Railway variables), schema (Alembic), and data (`content/resume.json`). Git moves code, schema migrations, and resume content. Secrets and Railway variables are set in the dashboard. The VM's SQLite file is not copied, because the data is rebuilt from the content file.
@@ -242,7 +306,8 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 | Service | What it's for | Cost | Expires / renews | Cleanup plan |
 |---|---|---|---|---|
 | Azure for Students | VM `Standard_B2ats_v2`, disk, public IP, NSG (`rg-career-platform`) | Paid from student credit. Actual cost Sep 1 – Oct 26, 2026 (Cost Management API, queried 2026-10-26): **$10.52**, made up of public IP (billed as Virtual Network) $7.67, disk storage $2.85, VM compute $0.00, bandwidth <$0.01. The public IP and disk keep charging while the VM exists. **Unverified:** credit remaining | **Unverified:** credit end date | Keep running until the instructor says otherwise, then delete the resource group |
-| Railway trial | Web service + Postgres | Trial credit: $5 or 30 days, whichever comes first. As of 2026-10-26: **$4.22 left** ($0.78 used) | **12 days left as of 2026-10-26, so the trial ends about 2026-11-07** | Migrate to AWS before it ends, then delete the project |
+| AWS (Free plan) | EC2 t3.micro, Elastic IP, RDS db.t4g.micro (us-east-1) | Estimated **$26.82/month** on-demand, paid from Free plan credits (see [Migration to AWS](#migration-to-aws)) | Free plan ends after 6 months or when credits run out, whichever comes first | Snapshot, then delete RDS; terminate EC2; release the Elastic IP (it bills while idle); delete SGs and key |
+| Railway trial | Web service + Postgres | Trial credit: $5 or 30 days, whichever comes first. As of 2026-10-26: **$4.22 left** ($0.78 used) | **Ended; found 2026-11-09 with both services showing no deployment** | Delete the project after the AWS cutover |
 | Namecheap | `kenwinsor.xyz` registration | $2 (first year) | Registered 2026-10-01, expires 2027-10-01 | Turn off auto-renew if I stop using the domain |
 | Cloudflare | DNS, `www` redirect | Free plan | — | — |
 | Zoho Mail | `ken@kenwinsor.xyz` | Forever Free plan | — | — |
@@ -255,7 +320,10 @@ Evidence: [docs/evidence/ex06.md](docs/evidence/ex06.md#3-google-analytics). On 
 - **The PostgreSQL migration for `projects` was only checked by the Railway deploy itself.** There's no local PostgreSQL; locally it was tested on SQLite (upgrade, ingest, downgrade, upgrade).
 - **The page needs the database to list projects**, by design. During an outage only the profile snapshot shows, with a 503.
 - **Database edits are overwritten on deploy**, because the content file is the source of truth.
-- **Single region, single instance**, and the site stops if the Railway trial runs out.
+- **Single region, single instance, Single-AZ database.** An outage in that one AZ takes the site down.
+- **`kenwinsor.xyz` is down until cutover.** The Railway trial ended before the AWS copy went live.
+- **RDS backups are kept for 1 day only** (Free plan limit), so the `pg_dump` copies are the longer-term backup.
+- **No automatic deploys on AWS.** Updating the site means SSH, `git pull`, and `systemctl restart career-platform`.
 - **The Railway database password was pasted into a chat session** on 2026-10-26. Rotating it is planned.
 
 ## Reflection
