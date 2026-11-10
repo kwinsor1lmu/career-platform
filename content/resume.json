@@ -37,7 +37,8 @@
     { "id": "administrative-support", "name": "Administrative Support", "order": 5, "visibility": "published" },
     { "id": "executive-assistance", "name": "Executive & Personal Assistance", "order": 6, "visibility": "published" },
     { "id": "marketing", "name": "Marketing", "order": 7, "visibility": "published" },
-    { "id": "spanish", "name": "Spanish", "level": "Fluent", "order": 8, "visibility": "published" }
+    { "id": "spanish", "name": "Spanish", "level": "Fluent", "order": 8, "visibility": "published" },
+    { "id": "aws-migration-test", "name": "AWS migration test (remove before cutover)", "level": "Test", "order": 9, "visibility": "published" }
   ],
   "certifications": [],
   "contact_links": [
